@@ -135,13 +135,30 @@ def analyze(
                 result = validator.validate(local_path)
                 progress.update(task2, description="✓ Validation complete", completed=1, total=1)
 
+                # Run AST Analysis Pipeline
+                task3 = progress.add_task("Analyzing codebase AST & Dependency Graph…", total=None)
+                from git_reverse.analysis.pipeline import AnalysisPipeline
+                pipeline = AnalysisPipeline(db=db, max_workers=settings.effective_workers)
+                await pipeline.run(repo_id=repo_id, validation_result=result)
+                progress.update(task3, description="✓ Analysis complete", completed=1, total=1)
+
+            # Get node/edge count from DB
+            async with db.conn.execute("SELECT COUNT(*) FROM nodes WHERE repo_id = ?", (repo_id,)) as cursor:
+                node_cnt_row = await cursor.fetchone()
+            node_cnt = node_cnt_row[0] if node_cnt_row else 0
+
+            async with db.conn.execute("SELECT COUNT(*) FROM edges WHERE source_id IN (SELECT id FROM nodes WHERE repo_id = ?)", (repo_id,)) as cursor:
+                edge_cnt_row = await cursor.fetchone()
+            edge_cnt = edge_cnt_row[0] if edge_cnt_row else 0
+
             # Print summary
             console.print(f"\n[bold green]Repository:[/] {name}")
             console.print(f"[bold]Branch:[/] {result.active_branch or 'detached HEAD'}")
             console.print(f"[bold]HEAD:[/] {result.head_sha[:12]}")
             console.print(f"[bold]Source files:[/] {len(result.manifest.source_files)}")
             console.print(f"[bold]Size:[/] {result.manifest.total_size_mb:.1f} MB")
-            console.print(f"[bold]Submodules:[/] {len(result.submodules)}")
+            console.print(f"[bold]AST Nodes parsed:[/] {node_cnt}")
+            console.print(f"[bold]Dependency edges:[/] {edge_cnt}")
 
             if output:
                 import json
@@ -152,6 +169,8 @@ def analyze(
                     "branch": result.active_branch,
                     "source_files": len(result.manifest.source_files),
                     "size_mb": result.manifest.total_size_mb,
+                    "ast_nodes": node_cnt,
+                    "dependency_edges": edge_cnt,
                 }
                 Path(output).write_text(json.dumps(out, indent=2))
                 console.print(f"\n[dim]Results written to {output}[/]")

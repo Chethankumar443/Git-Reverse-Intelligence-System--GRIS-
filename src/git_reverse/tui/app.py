@@ -1,37 +1,20 @@
 """
 Git Reverse TUI Application.
 
-Built with Textual for a Warp/Linear-inspired terminal experience.
-Design priorities:
-  - Keyboard-first: every action is reachable without a mouse.
-  - Non-blocking: all analysis and LLM calls run in async workers.
-  - Information-dense: maximum data, minimal chrome.
-  - Streaming: markdown renders progressively as the LLM responds.
-
-Layout (Phase 1 — scaffold):
-  ┌─ Header ──────────────────────────────────────────────┐
-  │  Git Reverse  │  Session ID  │  Mode  │  Model        │
-  ├─ Sidebar ─────┤─ Main Panel ──────────────────────────┤
-  │ Session list  │                                       │
-  │ Repository    │  Welcome / Dashboard                  │
-  │ tree          │                                       │
-  │               │                                       │
-  ├───────────────┴───────────────────────────────────────┤
-  │  Status bar: repo | branch | workers | key status     │
-  └───────────────────────────────────────────────────────┘
-
-Subsequent phases will fill the main panel with the analysis
-dashboard, streaming chat pane, and graph visualizer.
+Handles the keyboard-driven workspace interaction, async cloning and parsing,
+and displays the sidebar session list and chat interactions.
 """
 
 from __future__ import annotations
+
+import uuid
+from pathlib import Path
 
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical
 from textual.reactive import reactive
-from textual.screen import Screen
 from textual.widgets import (
     Footer,
     Header,
@@ -43,15 +26,16 @@ from textual.widgets import (
     Static,
 )
 
+from git_reverse.analysis.pipeline import AnalysisPipeline
 from git_reverse.config.settings import AppSettings
 from git_reverse.core.logging import get_logger
-from git_reverse.storage.database import Database, Session, SessionDAO
+from git_reverse.ingestion.cloner import RepositoryCloner
+from git_reverse.ingestion.validator import RepositoryValidator
+from git_reverse.storage.database import Database, Repository, RepositoryDAO, Session, SessionDAO
+from git_reverse.tui.chat import ChatPane
 
 log = get_logger(__name__)
 
-# ── CSS (Textual CSS) ─────────────────────────────────────────────────────────
-# Defined inline to keep Phase 1 self-contained. Phase 3 will move this to a
-# dedicated .tcss file alongside theme support.
 _APP_CSS = """
 Screen {
     background: $surface;
@@ -140,35 +124,12 @@ dependency maps, architecture diagrams, and LLM-powered interactive analysis.
 1. Paste a GitHub URL or local path in the input below and press **Enter**.
 2. Git Reverse will clone, validate, and begin the analysis pipeline.
 3. Ask questions, generate blueprints, and explore the codebase interactively.
-
----
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `Ctrl+P` | Command palette |
-| `Ctrl+N` | New session |
-| `Ctrl+R` | Resume last session |
-| `Ctrl+S` | Save session |
-| `Ctrl+M` | Switch model |
-| `Ctrl+T` | Toggle theme |
-| `Tab` | Cycle focus |
-| `Esc` | Close / cancel |
-| `?` | Help |
-
----
-
-> **Local First.** Nothing leaves your machine. All sessions, analysis,
-> and embeddings are stored in `~/.local/share/git-reverse/`.
 """
 
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 class Sidebar(Vertical):
-    """Left panel: session list and repository tree."""
-
-    DEFAULT_CSS = ""
+    """Left panel: session list."""
 
     def compose(self) -> ComposeResult:
         yield Label("◈ Git Reverse", id="sidebar-title")
@@ -180,16 +141,23 @@ class Sidebar(Vertical):
         session_list = self.query_one("#session-list", ListView)
         session_list.clear()
         if not sessions:
-            session_list.append(ListItem(Label("No sessions yet.", classes="session-item")))
+            session_list.append(ListItem(Label("No sessions yet.", classes="session-item"), id="none"))
             return
         for session in sessions:
-            label = f"{session.id}  [{session.mode}]"
-            session_list.append(ListItem(Label(label, classes="session-item")))
+            label = f"{session.id} [{session.mode}]"
+            item = ListItem(Label(label, classes="session-item"))
+            item.name = session.id  # Store session ID on node
+            session_list.append(item)
 
 
 # ── Main Panel ────────────────────────────────────────────────────────────────
 class MainPanel(Vertical):
-    """Right panel: dashboard, analysis view, and chat interface."""
+    """Right panel: welcomes dashboard or chat view."""
+
+    def __init__(self, db: Database, settings: AppSettings) -> None:
+        super().__init__()
+        self._db = db
+        self._settings = settings
 
     def compose(self) -> ComposeResult:
         yield Markdown(_WELCOME_TEXT, id="welcome-content")
@@ -199,6 +167,10 @@ class MainPanel(Vertical):
                 placeholder="https://github.com/owner/repo  or  /path/to/local/repo",
                 id="repo-input",
             )
+        # Hidden by default, swapped when session starts
+        chat_pane = ChatPane(self._db, self._settings.get_openrouter_key() or "", self._settings.default_model)
+        chat_pane.display = False
+        yield chat_pane
 
 
 # ── Status Bar ────────────────────────────────────────────────────────────────
@@ -218,12 +190,7 @@ class StatusBar(Static):
 
 # ── The Application ───────────────────────────────────────────────────────────
 class GitReverseApp(App[None]):
-    """
-    The root Textual application for Git Reverse.
-
-    Manages the top-level layout and global keybindings. Business logic
-    is delegated to async workers to keep the event loop responsive.
-    """
+    """The root Textual application for Git Reverse."""
 
     CSS = _APP_CSS
     TITLE = "Git Reverse"
@@ -245,17 +212,21 @@ class GitReverseApp(App[None]):
         self._settings = settings
         self._db = db
         self._session_dao = SessionDAO(db)
+        self._repo_dao = RepositoryDAO(db)
+        self.active_session_id: str | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with Horizontal(id="body"):
             yield Sidebar(id="sidebar")
-            yield MainPanel(id="main-panel")
+            yield MainPanel(self._db, self._settings)
         yield StatusBar(id="status-bar")
         yield Footer()
 
     def on_mount(self) -> None:
         """Load initial data after the DOM is ready."""
+        status = self.query_one(StatusBar)
+        status.model_name = self._settings.default_model
         self._load_recent_sessions()
 
     @work(exclusive=True)
@@ -267,17 +238,122 @@ class GitReverseApp(App[None]):
         except Exception as exc:  # noqa: BLE001
             log.error("failed_to_load_sessions", error=str(exc))
 
+    @on(ListView.Selected, "#session-list")
+    def on_session_selected(self, event: ListView.Selected) -> None:
+        """Handle session list selection."""
+        item = event.item
+        if not item or item.id == "none":
+            return
+        
+        session_id = getattr(item, "name", None)
+        if session_id:
+            self._load_session_by_id(session_id)
+
+    @work(exclusive=True)
+    async def _load_session_by_id(self, session_id: str) -> None:
+        """Switch to and display session by ID."""
+        try:
+            session = await self._session_dao.get_by_id(session_id)
+            self.active_session_id = session.id
+            
+            status = self.query_one(StatusBar)
+            status.session_id = session.id
+            
+            repo_name = "No repository"
+            if session.repo_id:
+                repo = await self._repo_dao.get_by_id(session.repo_id)
+                if repo:
+                    repo_name = repo.name
+            status.repo_name = repo_name
+
+            # Display Chat pane
+            welcome = self.query_one("#welcome-content", Markdown)
+            repo_box = self.query_one("#repo-input-container", Container)
+            chat_pane = self.query_one(ChatPane)
+            
+            welcome.display = False
+            repo_box.display = False
+            chat_pane.display = True
+            
+            chat_pane.set_session(session.id, session.repo_id)
+            self.notify(f"Loaded session {session.id}", severity="information")
+        except Exception as exc:  # noqa: BLE001
+            self.notify(f"Failed to load session: {exc}", severity="error")
+
     @on(Input.Submitted, "#repo-input")
-    async def on_repo_submitted(self, event: Input.Submitted) -> None:
-        """Handle repository URL/path submission from the main input."""
+    def on_repo_submitted(self, event: Input.Submitted) -> None:
+        """Handle repository URL/path submission."""
         url = event.value.strip()
         if not url:
             return
         event.input.clear()
-        log.info("repo_input_received", url=url)
-        # Phase 2 will wire this to the analysis pipeline.
-        # For now, show feedback.
-        self.notify(f"Analysis queued: {url}", title="Git Reverse", severity="information")
+        self._run_analysis_pipeline(url)
+
+    @work(exclusive=True)
+    async def _run_analysis_pipeline(self, url_or_path: str) -> None:
+        """Clones, validates, and runs AST analysis pipeline in the background."""
+        self.notify("Starting repository ingestion...", title="Git Reverse")
+        
+        # 1. Create a Repository record in DB
+        repo_id = str(uuid.uuid4())
+        name = url_or_path.rstrip("/").split("/")[-1].replace(".git", "")
+        
+        repo = Repository(
+            id=repo_id,
+            url=url_or_path,
+            name=name,
+            analysis_status="running",
+        )
+        await self._repo_dao.upsert(repo)
+
+        # Helper progress report callback
+        async def progress_cb(phase: str, completed: int, total: int, msg: str) -> None:
+            self.notify(f"[{completed}/{total}] {msg}", title="Analysis Pipeline")
+
+        try:
+            # 2. Clone
+            cloner = RepositoryCloner(
+                cache_dir=self._settings.repos_cache_path,
+                timeout_seconds=self._settings.clone_timeout_seconds,
+            )
+            local_path = await cloner.clone(
+                url_or_path,
+                repo_id=repo_id,
+                progress_callback=progress_cb,
+            )
+
+            # 3. Validate
+            validator = RepositoryValidator(max_repo_size_mb=self._settings.max_repo_size_mb)
+            val_result = validator.validate(local_path)
+
+            # Update Repository local_path in DB
+            repo.local_path = str(local_path)
+            await self._repo_dao.upsert(repo)
+
+            # 4. Parse AST and Build Dependency Graph
+            pipeline = AnalysisPipeline(db=self._db, max_workers=self._settings.effective_workers)
+            await pipeline.run(
+                repo_id=repo_id,
+                validation_result=val_result,
+                progress_callback=progress_cb,
+            )
+
+            # 5. Pipeline completed. Spawn a new session for this repository
+            session = await self._session_dao.create(
+                model=self._settings.default_model,
+                mode="explore",
+                repo_id=repo_id,
+                username=self._settings.username or None,
+            )
+            
+            # Switch view to new session
+            await self._load_session_by_id(session.id)
+            await self._load_recent_sessions()
+
+        except Exception as exc:  # noqa: BLE001
+            log.error("analysis_pipeline_failed", error=str(exc))
+            await self._repo_dao.update_status(repo_id, "failed", error=str(exc))
+            self.notify(f"Pipeline failed: {exc}", severity="error")
 
     # ── Actions ───────────────────────────────────────────────────────────────
     async def action_new_session(self) -> None:
@@ -287,31 +363,37 @@ class GitReverseApp(App[None]):
             mode="explore",
             username=self._settings.username or None,
         )
-        status = self.query_one(StatusBar)
-        status.session_id = session.id
-        self._load_recent_sessions()
-        self.notify(f"Session {session.id} started.", severity="information")
+        self.active_session_id = session.id
+        await self._load_recent_sessions()
+        await self._load_session_by_id(session.id)
 
     async def action_toggle_theme(self) -> None:
         """Toggle between dark and light themes."""
         self.dark = not self.dark
 
     async def action_command_palette(self) -> None:
-        """Show the command palette (Phase 3)."""
-        self.notify("Command palette coming in Phase 3.", severity="warning")
+        """Show the command palette."""
+        self.notify("Command palette coming in Phase 5.", severity="warning")
 
     async def action_switch_model(self) -> None:
-        """Open model selection screen (Phase 4)."""
-        self.notify("Model switcher coming in Phase 4.", severity="warning")
+        """Open model selection screen."""
+        self.notify("Model switcher coming in Phase 5.", severity="warning")
 
     async def action_resume_session(self) -> None:
         """Resume the most recent session."""
-        self.notify("Session resume coming in Phase 3.", severity="warning")
+        try:
+            sessions = await self._session_dao.list_recent(limit=1)
+            if sessions:
+                await self._load_session_by_id(sessions[0].id)
+            else:
+                self.notify("No sessions to resume.", severity="warning")
+        except Exception as exc:  # noqa: BLE001
+            self.notify(f"Resume failed: {exc}", severity="error")
 
     async def action_save_session(self) -> None:
         """Save the current session state."""
         self.notify("Session saved.", severity="success")
 
     async def action_show_help(self) -> None:
-        """Display the help overlay (Phase 3)."""
+        """Display the help overlay."""
         self.notify("Press Ctrl+P to open the command palette.", severity="information")
