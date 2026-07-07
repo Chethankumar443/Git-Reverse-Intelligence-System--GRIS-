@@ -73,7 +73,7 @@ class OpenRouterClient:
                     prompt_tokens = 0
                     completion_tokens = 0
 
-                    async for line_bytes in response.iter_lines():
+                    async for line_bytes in response.aiter_lines():
                         if not line_bytes:
                             continue
                         line = line_bytes.decode("utf-8", errors="replace")

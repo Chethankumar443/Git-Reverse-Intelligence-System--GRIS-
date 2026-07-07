@@ -11,6 +11,8 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from typing import Any
+
 from git_reverse.storage.database import Database
 
 

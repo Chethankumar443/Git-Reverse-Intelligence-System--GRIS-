@@ -82,7 +82,7 @@ ListView {
             if not normalized or normalized in cmd or normalized in desc.lower():
                 label = f"{cmd:<12} {desc}"
                 item = ListItem(Label(label, classes="palette-item"))
-                item.name = cmd
+                item.cmd_name = cmd
                 list_view.append(item)
 
     @on(Input.Changed, "#palette-input")
@@ -96,7 +96,7 @@ ListView {
         if list_view.children:
             selected_item = list_view.highlighted_child
             if selected_item:
-                cmd_name = getattr(selected_item, "name", None)
+                cmd_name = getattr(selected_item, "cmd_name", None)
                 if cmd_name:
                     self.dismiss(cmd_name)
                     return
@@ -104,6 +104,6 @@ ListView {
 
     @on(ListView.Selected, "#palette-list")
     def on_list_selected(self, event: ListView.Selected) -> None:
-        cmd_name = getattr(event.item, "name", None)
+        cmd_name = getattr(event.item, "cmd_name", None)
         if cmd_name:
             self.dismiss(cmd_name)

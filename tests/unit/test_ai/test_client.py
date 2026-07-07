@@ -30,7 +30,7 @@ async def test_stream_completion_success(monkeypatch: pytest.MonkeyPatch) -> Non
         async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
             pass
 
-        async def iter_lines(self) -> Any:
+        async def aiter_lines(self) -> Any:
             for line in _MOCK_STREAM_LINES:
                 yield line
 

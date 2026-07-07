@@ -146,7 +146,7 @@ class Sidebar(Vertical):
         for session in sessions:
             label = f"{session.id} [{session.mode}]"
             item = ListItem(Label(label, classes="session-item"))
-            item.name = session.id  # Store session ID on node
+            item.session_id = session.id  # Store session ID on node
             session_list.append(item)
 
 
@@ -244,7 +244,7 @@ class GitReverseApp(App[None]):
         if not item or item.id == "none":
             return
         
-        session_id = getattr(item, "name", None)
+        session_id = getattr(item, "session_id", None)
         if session_id:
             self.run_worker(self._load_session_by_id(session_id))
 
@@ -365,11 +365,11 @@ class GitReverseApp(App[None]):
         await self._load_recent_sessions()
         await self._load_session_by_id(session.id)
 
-    async def action_toggle_theme(self) -> None:
+    def action_toggle_theme(self) -> None:
         """Toggle between dark and light themes."""
         self.dark = not self.dark
 
-    async def action_command_palette(self) -> None:
+    def action_command_palette(self) -> None:
         """Show the command palette."""
         from git_reverse.tui.palette import CommandPalette
         
@@ -409,8 +409,8 @@ class GitReverseApp(App[None]):
 
     async def action_save_session(self) -> None:
         """Save the current session state."""
-        self.notify("Session saved.", severity="success")
+        self.notify("Session saved.", severity="information")
 
-    async def action_show_help(self) -> None:
+    def action_show_help(self) -> None:
         """Display the help overlay."""
         self.notify("Press Ctrl+P to open the command palette.", severity="information")
