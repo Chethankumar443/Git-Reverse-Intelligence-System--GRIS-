@@ -127,6 +127,11 @@ dependency maps, architecture diagrams, and LLM-powered interactive analysis.
 """
 
 
+class SessionListItem(ListItem):
+    """ListItem representing a session in the sidebar with type-safe session_id attribute."""
+    session_id: str
+
+
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 class Sidebar(Vertical):
     """Left panel: session list."""
@@ -145,7 +150,7 @@ class Sidebar(Vertical):
             return
         for session in sessions:
             label = f"{session.id} [{session.mode}]"
-            item = ListItem(Label(label, classes="session-item"))
+            item = SessionListItem(Label(label, classes="session-item"))
             item.session_id = session.id  # Store session ID on node
             session_list.append(item)
 
@@ -244,9 +249,8 @@ class GitReverseApp(App[None]):
         if not item or item.id == "none":
             return
         
-        session_id = getattr(item, "session_id", None)
-        if session_id:
-            self.run_worker(self._load_session_by_id(session_id))
+        if isinstance(item, SessionListItem):
+            self.run_worker(self._load_session_by_id(item.session_id))
 
     async def _load_session_by_id(self, session_id: str) -> None:
         """Switch to and display session by ID."""

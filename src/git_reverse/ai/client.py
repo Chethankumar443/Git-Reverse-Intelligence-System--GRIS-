@@ -73,10 +73,9 @@ class OpenRouterClient:
                     prompt_tokens = 0
                     completion_tokens = 0
 
-                    async for line_bytes in response.aiter_lines():
-                        if not line_bytes:
+                    async for line in response.aiter_lines():
+                        if not line:
                             continue
-                        line = line_bytes.decode("utf-8", errors="replace")
                         if line.startswith("data: "):
                             data_str = line[6:]
                             if data_str.strip() == "[DONE]":

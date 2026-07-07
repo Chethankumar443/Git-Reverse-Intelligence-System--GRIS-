@@ -22,6 +22,11 @@ _COMMANDS = [
 ]
 
 
+class CommandListItem(ListItem):
+    """ListItem representing a command with type-safe cmd_name attribute."""
+    cmd_name: str
+
+
 class CommandPalette(ModalScreen[str]):
     """Modal screen offering command searches and quick triggers."""
 
@@ -81,7 +86,7 @@ ListView {
         for cmd, desc in _COMMANDS:
             if not normalized or normalized in cmd or normalized in desc.lower():
                 label = f"{cmd:<12} {desc}"
-                item = ListItem(Label(label, classes="palette-item"))
+                item = CommandListItem(Label(label, classes="palette-item"))
                 item.cmd_name = cmd
                 list_view.append(item)
 
@@ -95,15 +100,12 @@ ListView {
         list_view = self.query_one("#palette-list", ListView)
         if list_view.children:
             selected_item = list_view.highlighted_child
-            if selected_item:
-                cmd_name = getattr(selected_item, "cmd_name", None)
-                if cmd_name:
-                    self.dismiss(cmd_name)
-                    return
+            if selected_item and isinstance(selected_item, CommandListItem):
+                self.dismiss(selected_item.cmd_name)
+                return
         self.dismiss("")
 
     @on(ListView.Selected, "#palette-list")
     def on_list_selected(self, event: ListView.Selected) -> None:
-        cmd_name = getattr(event.item, "cmd_name", None)
-        if cmd_name:
-            self.dismiss(cmd_name)
+        if isinstance(event.item, CommandListItem):
+            self.dismiss(event.item.cmd_name)

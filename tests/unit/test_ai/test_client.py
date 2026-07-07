@@ -12,9 +12,9 @@ from git_reverse.core.exceptions import LLMError
 
 # Simple mock response lines
 _MOCK_STREAM_LINES = [
-    b'data: {"choices": [{"delta": {"content": "Hello"}}]}',
-    b'data: {"choices": [{"delta": {"content": " world"}}], "usage": {"prompt_tokens": 10, "completion_tokens": 5}}',
-    b"data: [DONE]",
+    'data: {"choices": [{"delta": {"content": "Hello"}}]}',
+    'data: {"choices": [{"delta": {"content": " world"}}], "usage": {"prompt_tokens": 10, "completion_tokens": 5}}',
+    "data: [DONE]",
 ]
 
 
