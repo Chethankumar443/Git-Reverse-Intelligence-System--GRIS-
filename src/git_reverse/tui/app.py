@@ -227,9 +227,8 @@ class GitReverseApp(App[None]):
         """Load initial data after the DOM is ready."""
         status = self.query_one(StatusBar)
         status.model_name = self._settings.default_model
-        self._load_recent_sessions()
+        self.run_worker(self._load_recent_sessions())
 
-    @work(exclusive=True)
     async def _load_recent_sessions(self) -> None:
         """Fetch recent sessions from SQLite and populate the sidebar."""
         try:
@@ -247,9 +246,8 @@ class GitReverseApp(App[None]):
         
         session_id = getattr(item, "name", None)
         if session_id:
-            self._load_session_by_id(session_id)
+            self.run_worker(self._load_session_by_id(session_id))
 
-    @work(exclusive=True)
     async def _load_session_by_id(self, session_id: str) -> None:
         """Switch to and display session by ID."""
         try:

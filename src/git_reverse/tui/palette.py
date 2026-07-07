@@ -44,7 +44,7 @@ CommandPalette {
     background: $surface;
 }
 
-list-view {
+ListView {
     background: $surface;
     overflow-y: auto;
 }
@@ -55,7 +55,7 @@ list-view {
 
 .palette-name {
     color: $accent;
-    style: bold;
+    text-style: bold;
 }
 
 .palette-desc {
