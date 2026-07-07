@@ -373,11 +373,30 @@ class GitReverseApp(App[None]):
 
     async def action_command_palette(self) -> None:
         """Show the command palette."""
-        self.notify("Command palette coming in Phase 5.", severity="warning")
+        from git_reverse.tui.palette import CommandPalette
+        
+        def handle_cmd(cmd: str | None) -> None:
+            if not cmd:
+                return
+            if cmd == "settings":
+                self.action_switch_model()
+            elif cmd == "theme":
+                self.action_toggle_theme()
+            elif cmd == "new_session":
+                self.run_worker(self.action_new_session())
+            elif cmd == "resume":
+                self.run_worker(self.action_resume_session())
+            elif cmd == "help":
+                self.action_show_help()
+            elif cmd == "quit":
+                self.exit()
 
-    async def action_switch_model(self) -> None:
-        """Open model selection screen."""
-        self.notify("Model switcher coming in Phase 5.", severity="warning")
+        self.push_screen(CommandPalette(), handle_cmd)
+
+    def action_switch_model(self) -> None:
+        """Open settings screen (which manages model & keyring configuration)."""
+        from git_reverse.tui.settings import SettingsScreen
+        self.push_screen(SettingsScreen(self._settings))
 
     async def action_resume_session(self) -> None:
         """Resume the most recent session."""
