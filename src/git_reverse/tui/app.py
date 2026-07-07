@@ -42,45 +42,95 @@ Screen {
 }
 
 #sidebar {
-    width: 28;
-    min-width: 20;
-    border-right: solid $primary-darken-2;
-    padding: 0 1;
+    width: 32;
+    min-width: 24;
+    border-right: solid $primary-darken-3;
+    padding: 1 1;
+    background: $surface-darken-1;
     overflow-y: auto;
 }
 
 #sidebar-title {
-    color: $primary;
-    text-style: bold;
-    padding: 1 0 0 0;
+    color: $accent;
+    style: bold;
+    padding: 0 0 1 0;
     border-bottom: solid $primary-darken-3;
-    margin-bottom: 1;
+    margin-bottom: 2;
 }
 
 #main-panel {
-    padding: 1 2;
+    padding: 1 3;
+    background: $surface;
     overflow-y: auto;
 }
 
-#welcome-heading {
+#welcome-content {
+    width: 100%;
+    height: auto;
+}
+
+#dashboard-logo {
     color: $accent;
-    text-style: bold;
-    padding-bottom: 1;
+    style: bold;
+    margin-top: 1;
+    margin-bottom: 0;
 }
 
-#repo-input-container {
+#dashboard-tagline {
+    color: $text-muted;
+    margin-bottom: 3;
+}
+
+#dashboard-zones {
+    height: auto;
+    margin-bottom: 2;
+}
+
+#left-zone {
+    width: 58%;
+    border: tall $primary-darken-2;
+    background: $surface-darken-1;
+    padding: 1 2;
+    margin-right: 2;
+    height: auto;
+}
+
+#right-zone {
+    width: 42%;
+    border: tall $primary-darken-2;
+    background: $surface-darken-1;
+    padding: 1 2;
+    height: auto;
+}
+
+.zone-title {
+    color: $primary;
+    style: bold;
+    margin-bottom: 1;
+}
+
+#shortcuts-title {
     margin-top: 2;
-    border: solid $primary-darken-2;
-    padding: 1;
 }
 
-#repo-input-label {
+.zone-desc {
+    color: $text-muted;
+    margin-bottom: 2;
+}
+
+.status-item {
+    color: $text;
+    margin-bottom: 1;
+}
+
+.shortcut-item {
     color: $text-muted;
     margin-bottom: 1;
 }
 
 Input {
     border: solid $primary-darken-1;
+    background: $surface;
 }
 
 Input:focus {
@@ -89,42 +139,65 @@ Input:focus {
 
 #session-list-title {
     color: $text-muted;
-    text-style: italic;
-    padding: 0 0 1 0;
+    style: bold;
+    margin-bottom: 1;
 }
 
 .session-item {
     padding: 0 1;
+    margin-bottom: 1;
 }
 
-.session-item:hover {
-    background: $primary-darken-2;
+ListView > ListItem.--highlight {
+    background: $primary-darken-1;
+    color: $text;
+    style: bold;
 }
 
 #status-bar {
     height: 1;
     background: $primary-darken-3;
+    color: $text;
     padding: 0 1;
-    color: $text-muted;
 }
 """
 
-_WELCOME_TEXT = """\
-# Git Reverse
 
-**Repository Intelligence Platform**
+class WelcomeDashboard(Vertical):
+    """A premium Bento-style welcome dashboard for Git Reverse."""
 
-Transform any Git repository into structured knowledge: AST graphs,
-dependency maps, architecture diagrams, and LLM-powered interactive analysis.
+    def __init__(self, settings: AppSettings) -> None:
+        super().__init__(id="welcome-content")
+        self._settings = settings
 
----
-
-### Getting Started
-
-1. Paste a GitHub URL or local path in the input below and press **Enter**.
-2. Git Reverse will clone, validate, and begin the analysis pipeline.
-3. Ask questions, generate blueprints, and explore the codebase interactively.
-"""
+    def compose(self) -> ComposeResult:
+        yield Label("◈ GIT REVERSE", id="dashboard-logo")
+        yield Label("Repository Intelligence Platform", id="dashboard-tagline")
+        
+        with Horizontal(id="dashboard-zones"):
+            with Vertical(id="left-zone"):
+                yield Label("Select Codebase", classes="zone-title")
+                yield Label(
+                    "Provide a remote Git URL or a local workspace path to analyze and build "
+                    "the AST dependency graph.",
+                    classes="zone-desc"
+                )
+                yield Input(
+                    placeholder="https://github.com/owner/repo  or  /path/to/local/repo",
+                    id="repo-input",
+                )
+            
+            with Vertical(id="right-zone"):
+                yield Label("System Status", classes="zone-title")
+                yield Label("🔐 Keyring: Secure Storage Active", classes="status-item")
+                yield Label("🗄️ Database: Local SQLite Index", classes="status-item")
+                yield Label(f"🧠 Default Model: {self._settings.default_model}", classes="status-item")
+                
+                yield Label("Shortcut Commands", classes="zone-title", id="shortcuts-title")
+                yield Label("[Ctrl+P]  Command Palette", classes="shortcut-item")
+                yield Label("[Ctrl+N]  New Session", classes="shortcut-item")
+                yield Label("[Ctrl+T]  Toggle Theme", classes="shortcut-item")
+                yield Label("[Ctrl+Q]  Quit Application", classes="shortcut-item")
 
 
 class SessionListItem(ListItem):
@@ -165,13 +238,7 @@ class MainPanel(Vertical):
         self._settings = settings
 
     def compose(self) -> ComposeResult:
-        yield Markdown(_WELCOME_TEXT, id="welcome-content")
-        with Container(id="repo-input-container"):
-            yield Label("Enter a GitHub URL or local path to begin:", id="repo-input-label")
-            yield Input(
-                placeholder="https://github.com/owner/repo  or  /path/to/local/repo",
-                id="repo-input",
-            )
+        yield WelcomeDashboard(self._settings)
         # Hidden by default, swapped when session starts
         chat_pane = ChatPane(self._db, self._settings.get_openrouter_key() or "", self._settings.default_model)
         chat_pane.display = False
@@ -269,12 +336,10 @@ class GitReverseApp(App[None]):
             status.repo_name = repo_name
 
             # Display Chat pane
-            welcome = self.query_one("#welcome-content", Markdown)
-            repo_box = self.query_one("#repo-input-container", Container)
+            welcome = self.query_one("#welcome-content")
             chat_pane = self.query_one(ChatPane)
             
             welcome.display = False
-            repo_box.display = False
             chat_pane.display = True
             
             chat_pane.set_session(session.id, session.repo_id)
@@ -371,7 +436,7 @@ class GitReverseApp(App[None]):
 
     def action_toggle_theme(self) -> None:
         """Toggle between dark and light themes."""
-        self.dark = not self.dark
+        self.theme = "textual-light" if self.theme == "textual-dark" else "textual-dark"
 
     def action_command_palette(self) -> None:
         """Show the command palette."""
