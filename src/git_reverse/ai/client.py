@@ -8,7 +8,7 @@ rate limit/error mitigation.
 from __future__ import annotations
 
 import json
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import httpx
 
@@ -87,13 +87,13 @@ class OpenRouterClient:
                                 if choices:
                                     delta = choices[0].get("delta", {})
                                     content = delta.get("content", "")
-                                    
+
                                     # Try to extract token metrics if available on chunks
                                     usage = data.get("usage")
                                     if usage:
                                         prompt_tokens = usage.get("prompt_tokens", 0)
                                         completion_tokens = usage.get("completion_tokens", 0)
-                                        
+
                                     if content:
                                         yield content, prompt_tokens, completion_tokens
                             except (json.JSONDecodeError, KeyError) as exc:

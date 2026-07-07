@@ -8,8 +8,6 @@ to construct context payloads for LLM reasoning.
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Any
 
 from git_reverse.storage.database import Database
 
@@ -33,14 +31,14 @@ class ContextCompiler:
             "SELECT * FROM repositories WHERE id = ?", (repo_id,)
         ) as cursor:
             repo_row = await cursor.fetchone()
-        
+
         if not repo_row:
             return "No repository found."
 
         repo_dict = dict(repo_row)
         meta = json.loads(repo_dict.get("metadata") or "{}")
         frameworks = meta.get("frameworks", {})
-        
+
         # 2. Get high-level file list
         async with self._db.conn.execute(
             "SELECT file_path, type, name FROM nodes WHERE repo_id = ? AND type = 'module' ORDER BY file_path",
@@ -62,7 +60,7 @@ class ContextCompiler:
         if query:
             # Simple keyword match in name/content for ranking
             keywords = [w.lower() for w in query.split() if len(w) > 2]
-            
+
             # Retrieve node symbols
             async with self._db.conn.execute(
                 "SELECT * FROM nodes WHERE repo_id = ? AND type != 'module'",
@@ -74,14 +72,14 @@ class ContextCompiler:
             for node in nodes_rows:
                 node_name = node["name"].lower()
                 node_content = (node["content"] or "").lower()
-                
+
                 score = 0
                 for kw in keywords:
                     if kw in node_name:
                         score += 10
                     if kw in node_content:
                         score += 2
-                
+
                 if score > 0:
                     matching_nodes.append((score, node))
 
@@ -94,7 +92,7 @@ class ContextCompiler:
                 for n in top_nodes:
                     lines.append(f"\n--- Symbol: {n['name']} ({n['type']}) in {n['file_path']} ---")
                     lines.append(n["content"] or "")
-                    
+
                     # Embed metadata metrics if cyclomatic complexity is found
                     n_meta = json.loads(n["metadata"] or "{}")
                     if "complexity" in n_meta:
@@ -109,7 +107,7 @@ class ContextCompiler:
                 (repo_id,),
             ) as cursor:
                 structures = list(await cursor.fetchall())
-            
+
             if structures:
                 lines.append("\nCodebase Structures (Classes / Structs):")
                 for s in structures:

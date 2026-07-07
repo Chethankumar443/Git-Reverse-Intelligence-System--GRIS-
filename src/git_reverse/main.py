@@ -29,11 +29,27 @@ def _bootstrap() -> None:
     configure_logging(settings.log_level, dev_mode=settings.dev_mode)
 
 
+def print_exit_banner(session_id: str, timestamp: str) -> None:
+    banner = r"""
+    ██████╗ ██╗████████╗      ██████╗ ███████╗██╗   ██╗███████╗██████╗ ███████╗███████╗
+   ██╔════╝ ██║╚══██╔══╝      ██╔══██╗██╔════╝██║   ██║██╔════╝██╔══██╗██╔════╝██╔════╝
+   ██║  ███╗██║    ██║          ██████╔╝█████╗  ██║   ██║ █████╗  ██████╔╝███████╗█████╗
+   ██║   ██║██║    ██║          ██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══╝   ██╔══██╗╚════██║██╔══╝
+   ╚██████╔╝██║   ██║          ██║  ██║███████╗ ╚████╔╝ ███████╗ ██║  ██║███████║███████╗
+    ╚═════╝ ╚═╝   ╚═╝          ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚══════╝  ╚═╝  ╚═╝╚══════╝╚══════╝
+"""
+    print(banner)
+    print(f"  Session   New session - {timestamp}")
+    print(f"  Continue  Git-Reverse - {session_id}")
+    print()
+
+
 # ── Root Group ────────────────────────────────────────────────────────────────
 @click.group(invoke_without_command=True, context_settings={"help_option_names": ["-h", "--help"]})
 @click.version_option(__version__, "-V", "--version", prog_name="git-reverse")
+@click.argument("args", nargs=-1)
 @click.pass_context
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, args: tuple[str, ...]) -> None:
     """
     Git Reverse — Repository Intelligence Platform.
 
@@ -41,28 +57,38 @@ def cli(ctx: click.Context) -> None:
     """
     _bootstrap()
     if ctx.invoked_subcommand is None:
-        # No sub-command → launch TUI
-        ctx.invoke(tui)
+        # No sub-command -> launch TUI, passing session_id if provided in args
+        session_id = args[0] if args else None
+        ctx.invoke(tui, session_id=session_id)
 
 
 # ── TUI Command ───────────────────────────────────────────────────────────────
 @cli.command("tui")
-def tui() -> None:
+@click.argument("session_id", required=False, default=None)
+def tui(session_id: str | None) -> None:
     """Launch the interactive terminal UI (default)."""
+    import time
+
     from git_reverse.storage.database import Database
     from git_reverse.tui.app import GitReverseApp
 
     settings = get_settings()
+    app = None
 
     async def _run() -> None:
+        nonlocal app
         async with Database(settings.db_path) as db:
-            app = GitReverseApp(settings=settings, db=db)
+            app = GitReverseApp(settings=settings, db=db, initial_session_id=session_id)
             await app.run_async()
 
     try:
         asyncio.run(_run())
     except KeyboardInterrupt:
         pass
+    finally:
+        if app and app.active_session_id:
+            timestamp = time.strftime('%Y-%m-%dT%H:%M:%S.000Z', time.gmtime())
+            print_exit_banner(app.active_session_id, timestamp)
 
 
 # ── Analyze Command (headless) ────────────────────────────────────────────────
@@ -90,6 +116,7 @@ def analyze(
       git-reverse analyze ./my-local-project --mode architecture
     """
     import uuid
+
     from rich.console import Console
     from rich.progress import Progress, SpinnerColumn, TextColumn
 
@@ -98,7 +125,6 @@ def analyze(
     from git_reverse.storage.database import Database, RepositoryDAO
 
     settings = get_settings()
-    effective_model = model or settings.default_model
     console = Console()
 
     async def _run_headless() -> None:
@@ -114,7 +140,7 @@ def analyze(
             from git_reverse.storage.database import Repository
             repo_id = str(uuid.uuid4())
             name = url_or_path.rstrip("/").split("/")[-1].replace(".git", "")
-            repo = await repo_dao.upsert(
+            await repo_dao.upsert(
                 Repository(id=repo_id, url=url_or_path, name=name, analysis_status="running")
             )
 
@@ -194,6 +220,7 @@ def doctor() -> None:
     and disk space. Reports any issues with suggested fixes.
     """
     import shutil
+
     from rich.console import Console
     from rich.table import Table
 
@@ -253,7 +280,7 @@ def doctor() -> None:
         warn("OpenRouter API key", "Not configured — run /settings or set OPENROUTER_API_KEY")
 
     # Disk space
-    total, used, free = shutil.disk_usage(settings.data_dir)
+    _total, _used, free = shutil.disk_usage(settings.data_dir)
     free_gb = free / (1024 ** 3)
     if free_gb >= 5:
         ok("Disk space", f"{free_gb:.1f} GB free")

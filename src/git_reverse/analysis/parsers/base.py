@@ -116,7 +116,7 @@ class BaseParser(ABC):
 
         try:
             tree = self._parser.parse(source)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             return ParseResult(
                 file_path=str(file_path),
                 language=self._lang_name,
@@ -129,7 +129,7 @@ class BaseParser(ABC):
 
         try:
             symbols = self._extract_symbols(tree.root_node, source, str(file_path))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error(
                 "symbol_extraction_failed",
                 path=str(file_path),

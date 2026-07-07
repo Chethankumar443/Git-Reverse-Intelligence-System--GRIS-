@@ -27,14 +27,14 @@ class ParserRegistry:
         or None if the extension is not supported.
         """
         ext = suffix.lower()
-        
+
         # Resolve TypeScript / JSX variants to JS/TS parser
         if ext in (".js", ".jsx", ".mjs", ".cjs"):
             if "javascript" not in self._parsers:
                 from git_reverse.analysis.parsers.javascript import JavaScriptParser
                 self._parsers["javascript"] = JavaScriptParser(is_typescript=False)
             return self._parsers["javascript"]
-            
+
         if ext in (".ts", ".tsx"):
             if "typescript" not in self._parsers:
                 from git_reverse.analysis.parsers.javascript import JavaScriptParser

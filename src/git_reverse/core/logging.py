@@ -24,8 +24,8 @@ from structlog.types import EventDict, WrappedLogger
 
 # ── Custom Processors ─────────────────────────────────────────────────────────
 def _add_app_context(
-    logger: WrappedLogger,  # noqa: ARG001
-    method_name: str,  # noqa: ARG001
+    logger: WrappedLogger,
+    method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
     """Inject the application name and log level into every event."""
@@ -34,8 +34,8 @@ def _add_app_context(
 
 
 def _drop_color_message_key(
-    logger: WrappedLogger,  # noqa: ARG001
-    method_name: str,  # noqa: ARG001
+    logger: WrappedLogger,
+    method_name: str,
     event_dict: EventDict,
 ) -> EventDict:
     """

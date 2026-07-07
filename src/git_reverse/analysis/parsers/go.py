@@ -54,7 +54,7 @@ class GoParser(BaseParser):
                 if not name_node:
                     continue
                 name = self._node_text(name_node, source)
-                
+
                 type_type = "class"
                 type_node = spec.child_by_field_name("type")
                 if type_node and type_node.type == "struct_type":

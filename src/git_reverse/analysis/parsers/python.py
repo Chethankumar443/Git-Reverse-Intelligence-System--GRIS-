@@ -27,7 +27,7 @@ class PythonParser(BaseParser):
 
     def _extract_symbols(self, root: Node, source: bytes, file_path: str) -> list[ParsedSymbol]:
         symbols: list[ParsedSymbol] = []
-        
+
         # 1. Extract imports at root level
         for node in self._find_all(root, "import_statement", "import_from_statement"):
             text = self._node_text(node, source)
@@ -59,7 +59,7 @@ class PythonParser(BaseParser):
             if not name_node:
                 continue
             name = self._node_text(name_node, source)
-            
+
             # Base classes
             bases: list[str] = []
             arg_list = self._find_first(node, "argument_list")
@@ -73,7 +73,7 @@ class PythonParser(BaseParser):
             decor_list = self._find_first(node, "decorator")
             if decor_list:
                 decorators.append(self._node_text(decor_list, source))
-            
+
             symbol = ParsedSymbol(
                 type="class",
                 name=name,
@@ -93,7 +93,7 @@ class PythonParser(BaseParser):
             if not name_node:
                 continue
             name = self._node_text(name_node, source)
-            
+
             # Decorators
             decorators = []
             # In tree-sitter-python, decorators can be preceding siblings

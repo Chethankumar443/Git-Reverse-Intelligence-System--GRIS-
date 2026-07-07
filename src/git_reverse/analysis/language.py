@@ -12,7 +12,6 @@ Detection is intentionally fast: < 10 ms on any repo.
 
 from __future__ import annotations
 
-import re
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path

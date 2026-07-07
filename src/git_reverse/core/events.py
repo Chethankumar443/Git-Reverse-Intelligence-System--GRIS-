@@ -22,9 +22,10 @@ from __future__ import annotations
 import asyncio
 import inspect
 from collections import defaultdict
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Coroutine, TypeVar
+from typing import Any, TypeVar
 
 from git_reverse.core.logging import get_logger
 
@@ -229,7 +230,7 @@ _bus: EventBus | None = None
 
 def get_event_bus() -> EventBus:
     """Return the global application EventBus singleton."""
-    global _bus  # noqa: PLW0603
+    global _bus
     if _bus is None:
         _bus = EventBus()
     return _bus
@@ -237,5 +238,5 @@ def get_event_bus() -> EventBus:
 
 def reset_event_bus() -> None:
     """Reset the singleton. Call this in tests to get a clean bus."""
-    global _bus  # noqa: PLW0603
+    global _bus
     _bus = None

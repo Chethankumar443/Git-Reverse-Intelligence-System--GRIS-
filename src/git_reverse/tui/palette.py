@@ -30,45 +30,6 @@ class CommandListItem(ListItem):
 class CommandPalette(ModalScreen[str]):
     """Modal screen offering command searches and quick triggers."""
 
-    DEFAULT_CSS = """
-CommandPalette {
-    align: center top;
-    padding-top: 4;
-}
-
-#palette-container {
-    width: 60;
-    max-height: 24;
-    border: solid $primary;
-    background: $surface;
-}
-
-#palette-input {
-    border: none;
-    margin: 0;
-    background: $surface;
-}
-
-ListView {
-    background: $surface;
-    overflow-y: auto;
-}
-
-.palette-item {
-    padding: 0 1;
-}
-
-.palette-name {
-    color: $accent;
-    text-style: bold;
-}
-
-.palette-desc {
-    color: $text-muted;
-    margin-left: 2;
-}
-"""
-
     def compose(self) -> ComposeResult:
         with Container(id="palette-container"):
             yield Input(placeholder="Type a command...", id="palette-input")
@@ -81,7 +42,7 @@ ListView {
     def _populate_list(self, filter_text: str) -> None:
         list_view = self.query_one("#palette-list", ListView)
         list_view.clear()
-        
+
         normalized = filter_text.strip().lower()
         for cmd, desc in _COMMANDS:
             if not normalized or normalized in cmd or normalized in desc.lower():

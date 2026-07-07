@@ -12,15 +12,15 @@ Architecture:
 
 from __future__ import annotations
 
-import importlib.resources
 import json
 import sqlite3
 import uuid
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any
 
 import aiosqlite
 
@@ -153,7 +153,7 @@ class Database:
             self._conn = None
             log.info("database_closed")
 
-    async def __aenter__(self) -> "Database":
+    async def __aenter__(self) -> Database:
         await self.connect()
         return self
 
@@ -412,6 +412,22 @@ class SessionDAO:
             await self._db.conn.commit()
         except sqlite3.Error as exc:
             raise DatabaseError("archive_session", str(exc)) from exc
+
+    async def update_mode(self, session_id: str, mode: str) -> None:
+        """Update the active mode for a session."""
+        try:
+            await self._db.conn.execute(
+                """
+                UPDATE sessions
+                SET mode = ?,
+                    updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+                WHERE id = ?
+                """,
+                (mode, session_id),
+            )
+            await self._db.conn.commit()
+        except sqlite3.Error as exc:
+            raise DatabaseError("update_session_mode", str(exc)) from exc
 
     @staticmethod
     def _row_to_session(row: aiosqlite.Row) -> Session:

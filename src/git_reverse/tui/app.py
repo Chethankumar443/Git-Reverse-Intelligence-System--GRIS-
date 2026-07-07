@@ -8,12 +8,12 @@ and displays the sidebar session list and chat interactions.
 from __future__ import annotations
 
 import uuid
-from pathlib import Path
+from typing import ClassVar
 
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
 from textual.widgets import (
     Footer,
@@ -22,7 +22,6 @@ from textual.widgets import (
     Label,
     ListItem,
     ListView,
-    Markdown,
     Static,
 )
 
@@ -36,131 +35,19 @@ from git_reverse.tui.chat import ChatPane
 
 log = get_logger(__name__)
 
-_APP_CSS = """
-Screen {
-    background: $surface;
-}
+# External stylesheet is loaded via CSS_PATH
 
-#sidebar {
-    width: 32;
-    min-width: 24;
-    border-right: solid $primary-darken-3;
-    padding: 1 1;
-    background: $surface-darken-1;
-    overflow-y: auto;
-}
 
-#sidebar-title {
-    color: $accent;
-    style: bold;
-    padding: 0 0 1 0;
-    border-bottom: solid $primary-darken-3;
-    margin-bottom: 2;
-}
-
-#main-panel {
-    padding: 1 3;
-    background: $surface;
-    overflow-y: auto;
-}
-
-#welcome-content {
-    width: 100%;
-    height: auto;
-}
-
-#dashboard-logo {
-    color: $accent;
-    style: bold;
-    margin-top: 1;
-    margin-bottom: 0;
-}
-
-#dashboard-tagline {
-    color: $text-muted;
-    margin-bottom: 3;
-}
-
-#dashboard-zones {
-    height: auto;
-    margin-bottom: 2;
-}
-
-#left-zone {
-    width: 58%;
-    border: tall $primary-darken-2;
-    background: $surface-darken-1;
-    padding: 1 2;
-    margin-right: 2;
-    height: auto;
-}
-
-#right-zone {
-    width: 42%;
-    border: tall $primary-darken-2;
-    background: $surface-darken-1;
-    padding: 1 2;
-    height: auto;
-}
-
-.zone-title {
-    color: $primary;
-    style: bold;
-    margin-bottom: 1;
-}
-
-#shortcuts-title {
-    margin-top: 2;
-}
-
-.zone-desc {
-    color: $text-muted;
-    margin-bottom: 2;
-}
-
-.status-item {
-    color: $text;
-    margin-bottom: 1;
-}
-
-.shortcut-item {
-    color: $text-muted;
-    margin-bottom: 1;
-}
-
-Input {
-    border: solid $primary-darken-1;
-    background: $surface;
-}
-
-Input:focus {
-    border: solid $accent;
-}
-
-#session-list-title {
-    color: $text-muted;
-    style: bold;
-    margin-bottom: 1;
-}
-
-.session-item {
-    padding: 0 1;
-    margin-bottom: 1;
-}
-
-ListView > ListItem.--highlight {
-    background: $primary-darken-1;
-    color: $text;
-    style: bold;
-}
-
-#status-bar {
-    height: 1;
-    background: $primary-darken-3;
-    color: $text;
-    padding: 0 1;
-}
-"""
+ASCII_LOGO = """
+   █████████   ███   █████               ███████████
+  ███▒▒▒▒▒███ ▒▒▒   ▒▒███               ▒▒███▒▒▒▒▒███
+ ███     ▒▒▒  ████  ███████              ▒███    ▒███   ██████  █████ █████  ██████  ████████   █████   ██████
+▒███         ▒▒███ ▒▒▒███▒    ██████████ ▒██████████   ███▒▒███▒▒███ ▒▒███  ███▒▒███▒▒███▒▒███ ███▒▒   ███▒▒███
+▒███    █████ ▒███   ▒███    ▒▒▒▒▒▒▒▒▒▒  ▒███▒▒▒▒▒███ ▒███████  ▒███  ▒███ ▒███████  ▒███ ▒▒▒ ▒▒█████ ▒███████
+▒▒███  ▒▒███  ▒███   ▒███ ███            ▒███    ▒███ ▒███▒▒▒   ▒▒███ ███  ▒███▒▒▒   ▒███      ▒▒▒▒███▒███▒▒▒
+ ▒▒█████████  █████  ▒▒█████             █████   █████▒▒██████   ▒▒█████   ▒▒██████  █████     ██████ ▒▒██████
+  ▒▒▒▒▒▒▒▒▒  ▒▒▒▒▒    ▒▒▒▒▒             ▒▒▒▒▒   ▒▒▒▒▒  ▒▒▒▒▒▒     ▒▒▒▒▒     ▒▒▒▒▒▒  ▒▒▒▒▒     ▒▒▒▒▒▒   ▒▒▒▒▒▒
+""".strip("\n")
 
 
 class WelcomeDashboard(Vertical):
@@ -171,9 +58,10 @@ class WelcomeDashboard(Vertical):
         self._settings = settings
 
     def compose(self) -> ComposeResult:
-        yield Label("◈ GIT REVERSE", id="dashboard-logo")
-        yield Label("Repository Intelligence Platform", id="dashboard-tagline")
-        
+        yield Label(ASCII_LOGO, id="dashboard-logo")
+        user = self._settings.username or "Guest"
+        yield Label(f"Welcome back, {user}  │  Repository Intelligence Platform", id="dashboard-tagline")
+
         with Horizontal(id="dashboard-zones"):
             with Vertical(id="left-zone"):
                 yield Label("Select Codebase", classes="zone-title")
@@ -186,13 +74,13 @@ class WelcomeDashboard(Vertical):
                     placeholder="https://github.com/owner/repo  or  /path/to/local/repo",
                     id="repo-input",
                 )
-            
+
             with Vertical(id="right-zone"):
                 yield Label("System Status", classes="zone-title")
                 yield Label("🔐 Keyring: Secure Storage Active", classes="status-item")
                 yield Label("🗄️ Database: Local SQLite Index", classes="status-item")
                 yield Label(f"🧠 Default Model: {self._settings.default_model}", classes="status-item")
-                
+
                 yield Label("Shortcut Commands", classes="zone-title", id="shortcuts-title")
                 yield Label("[Ctrl+P]  Command Palette", classes="shortcut-item")
                 yield Label("[Ctrl+N]  New Session", classes="shortcut-item")
@@ -264,28 +152,30 @@ class StatusBar(Static):
 class GitReverseApp(App[None]):
     """The root Textual application for Git Reverse."""
 
-    CSS = _APP_CSS
+    CSS_PATH = "styles.tcss"
     TITLE = "Git Reverse"
     SUB_TITLE = "Repository Intelligence Platform"
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[Binding]] = [
         Binding("ctrl+p", "command_palette", "Command Palette", priority=True),
         Binding("ctrl+n", "new_session", "New Session"),
         Binding("ctrl+r", "resume_session", "Resume Session"),
         Binding("ctrl+s", "save_session", "Save"),
         Binding("ctrl+m", "switch_model", "Model"),
         Binding("ctrl+t", "toggle_theme", "Theme"),
+        Binding("ctrl+b", "toggle_sidebar", "Toggle Sidebar"),
         Binding("ctrl+q", "quit", "Quit", priority=True),
         Binding("question_mark", "show_help", "Help", key_display="?"),
     ]
 
-    def __init__(self, settings: AppSettings, db: Database) -> None:
+    def __init__(self, settings: AppSettings, db: Database, initial_session_id: str | None = None) -> None:
         super().__init__()
         self._settings = settings
         self._db = db
         self._session_dao = SessionDAO(db)
         self._repo_dao = RepositoryDAO(db)
         self.active_session_id: str | None = None
+        self._initial_session_id = initial_session_id
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -299,14 +189,92 @@ class GitReverseApp(App[None]):
         """Load initial data after the DOM is ready."""
         status = self.query_one(StatusBar)
         status.model_name = self._settings.default_model
-        self.run_worker(self._load_recent_sessions())
+
+        # Load requested initial session if specified
+        if self._initial_session_id:
+            self.run_worker(self._load_session_by_id(self._initial_session_id))
+            self.run_worker(self._load_recent_sessions())
+            self.set_interval(300, self._check_new_models)
+            return
+
+        # Check onboarding status
+        if not self._settings.username:
+            from git_reverse.tui.onboarding import OnboardingScreen
+
+            async def handle_onboarding_dismiss(result: None) -> None:
+                if self._settings.username:
+                    status.model_name = self._settings.default_model
+                    # Replace dashboard widget with fresh one showing username
+                    main_panel = self.query_one(MainPanel)
+                    await main_panel.query_one(WelcomeDashboard).remove()
+                    await main_panel.mount(WelcomeDashboard(self._settings), before=0)
+
+                    self.notify(f"Welcome to Git Reverse, {self._settings.username}!", severity="information")
+                    self.run_worker(self._load_recent_sessions())
+
+            self.push_screen(OnboardingScreen(self._settings), handle_onboarding_dismiss)
+        else:
+            self.run_worker(self._load_recent_sessions())
+
+        # Set periodic free models checker (every 5 minutes)
+        self.set_interval(300, self._check_new_models)
+
+    async def _check_new_models(self) -> None:
+        """Background checker for newly launched free-tier models on OpenRouter."""
+        key = self._settings.get_openrouter_key()
+        if not key:
+            return
+
+        import json
+
+        import httpx
+
+        cache_file = self._settings.data_dir / "free_models_cache.json"
+        cached_ids: set[str] = set()
+        if cache_file.exists():
+            try:
+                cached_ids = set(json.loads(cache_file.read_text(encoding="utf-8")))
+            except Exception:
+                pass
+
+        url = "https://openrouter.ai/api/v1/models"
+        headers = {"Authorization": f"Bearer {key}"}
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(url, headers=headers, timeout=10.0)
+            if res.status_code == 200:
+                models = res.json().get("data", [])
+                current_free_ids = []
+                new_models = []
+                for m in models:
+                    pricing = m.get("pricing", {})
+                    prompt_cost = float(pricing.get("prompt") or 0.0)
+                    completion_cost = float(pricing.get("completion") or 0.0)
+                    if prompt_cost == 0.0 and completion_cost == 0.0:
+                        m_id = m.get("id")
+                        current_free_ids.append(m_id)
+                        if cached_ids and m_id not in cached_ids:
+                            new_models.append(m.get("name") or m_id)
+
+                # Update cache file
+                cache_file.write_text(json.dumps(current_free_ids), encoding="utf-8")
+
+                # Notify user if new models found
+                for new_m in new_models:
+                    self.notify(
+                        f"New free model launched: {new_m}! Check it out in settings.",
+                        title="New Model Available",
+                        severity="information"
+                    )
+        except Exception:
+            pass
 
     async def _load_recent_sessions(self) -> None:
         """Fetch recent sessions from SQLite and populate the sidebar."""
         try:
             sessions = await self._session_dao.list_recent(limit=15)
             self.query_one(Sidebar).populate_sessions(sessions)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             log.error("failed_to_load_sessions", error=str(exc))
 
     @on(ListView.Selected, "#session-list")
@@ -315,7 +283,7 @@ class GitReverseApp(App[None]):
         item = event.item
         if not item or item.id == "none":
             return
-        
+
         if isinstance(item, SessionListItem):
             self.run_worker(self._load_session_by_id(item.session_id))
 
@@ -324,10 +292,10 @@ class GitReverseApp(App[None]):
         try:
             session = await self._session_dao.get_by_id(session_id)
             self.active_session_id = session.id
-            
+
             status = self.query_one(StatusBar)
             status.session_id = session.id
-            
+
             repo_name = "No repository"
             if session.repo_id:
                 repo = await self._repo_dao.get_by_id(session.repo_id)
@@ -338,33 +306,54 @@ class GitReverseApp(App[None]):
             # Display Chat pane
             welcome = self.query_one("#welcome-content")
             chat_pane = self.query_one(ChatPane)
-            
+
             welcome.display = False
             chat_pane.display = True
-            
+
             chat_pane.set_session(session.id, session.repo_id)
             self.notify(f"Loaded session {session.id}", severity="information")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self.notify(f"Failed to load session: {exc}", severity="error")
 
     @on(Input.Submitted, "#repo-input")
     def on_repo_submitted(self, event: Input.Submitted) -> None:
-        """Handle repository URL/path submission."""
-        url = event.value.strip()
-        if not url:
+        """Handle repository URL/path submission with optional trailing query."""
+        val = event.value.strip()
+        if not val:
             return
         event.input.clear()
-        self._run_analysis_pipeline(url)
+
+        url, query = self._parse_repo_input(val)
+        self._run_analysis_pipeline(url, query)
+
+    def _parse_repo_input(self, value: str) -> tuple[str, str | None]:
+        """
+        Parse repo input string into a repository url/path and optional query.
+        Example:
+          "https://github.com/org/repo.git explain the architecture"
+          -> ("https://github.com/org/repo.git", "explain the architecture")
+        """
+        parts = value.strip().split(maxsplit=1)
+        if len(parts) == 2:
+            first, rest = parts
+            if (
+                first.startswith(("http://", "https://", "git@", "ssh://"))
+                or first.endswith(".git")
+                or "/" in first
+                or "\\" in first
+            ):
+                return first, rest
+        return value.strip(), None
 
     @work(exclusive=True)
-    async def _run_analysis_pipeline(self, url_or_path: str) -> None:
+    async def _run_analysis_pipeline(self, url_or_path: str, initial_query: str | None = None) -> None:
         """Clones, validates, and runs AST analysis pipeline in the background."""
         self.notify("Starting repository ingestion...", title="Git Reverse")
-        
+
         # 1. Create a Repository record in DB
         repo_id = str(uuid.uuid4())
         name = url_or_path.rstrip("/").split("/")[-1].replace(".git", "")
-        
+
         repo = Repository(
             id=repo_id,
             url=url_or_path,
@@ -412,12 +401,16 @@ class GitReverseApp(App[None]):
                 repo_id=repo_id,
                 username=self._settings.username or None,
             )
-            
+
             # Switch view to new session
             await self._load_session_by_id(session.id)
             await self._load_recent_sessions()
 
-        except Exception as exc:  # noqa: BLE001
+            if initial_query:
+                chat_pane = self.query_one(ChatPane)
+                chat_pane.submit_query(initial_query)
+
+        except Exception as exc:
             log.error("analysis_pipeline_failed", error=str(exc))
             await self._repo_dao.update_status(repo_id, "failed", error=str(exc))
             self.notify(f"Pipeline failed: {exc}", severity="error")
@@ -441,7 +434,7 @@ class GitReverseApp(App[None]):
     def action_command_palette(self) -> None:
         """Show the command palette."""
         from git_reverse.tui.palette import CommandPalette
-        
+
         def handle_cmd(cmd: str | None) -> None:
             if not cmd:
                 return
@@ -463,7 +456,20 @@ class GitReverseApp(App[None]):
     def action_switch_model(self) -> None:
         """Open settings screen (which manages model & keyring configuration)."""
         from git_reverse.tui.settings import SettingsScreen
-        self.push_screen(SettingsScreen(self._settings))
+
+        async def handle_settings_dismiss(result: None) -> None:
+            # Refresh default model name in status bar
+            self.query_one(StatusBar).model_name = self._settings.default_model
+            # Rebuild WelcomeDashboard to show updated username
+            try:
+                main_panel = self.query_one(MainPanel)
+                welcome = main_panel.query_one(WelcomeDashboard)
+                await welcome.remove()
+                await main_panel.mount(WelcomeDashboard(self._settings), before=0)
+            except Exception:
+                pass
+
+        self.push_screen(SettingsScreen(self._settings), handle_settings_dismiss)
 
     async def action_resume_session(self) -> None:
         """Resume the most recent session."""
@@ -473,7 +479,7 @@ class GitReverseApp(App[None]):
                 await self._load_session_by_id(sessions[0].id)
             else:
                 self.notify("No sessions to resume.", severity="warning")
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             self.notify(f"Resume failed: {exc}", severity="error")
 
     async def action_save_session(self) -> None:
@@ -483,3 +489,8 @@ class GitReverseApp(App[None]):
     def action_show_help(self) -> None:
         """Display the help overlay."""
         self.notify("Press Ctrl+P to open the command palette.", severity="information")
+
+    def action_toggle_sidebar(self) -> None:
+        """Toggle the sidebar display collapsed state."""
+        sidebar = self.query_one(Sidebar)
+        sidebar.toggle_class("collapsed")

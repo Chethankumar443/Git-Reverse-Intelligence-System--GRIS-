@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Callable, Coroutine, Any
+from typing import Any
 
 from git_reverse.analysis.complexity import ComplexityScorer
 from git_reverse.analysis.graph import KnowledgeGraphBuilder
@@ -29,8 +30,8 @@ from git_reverse.core.events import (
     get_event_bus,
 )
 from git_reverse.core.logging import get_logger
-from git_reverse.ingestion.validator import FileManifest, ValidationResult
-from git_reverse.storage.database import Database, Edge, Node, Repository, RepositoryDAO
+from git_reverse.ingestion.validator import ValidationResult
+from git_reverse.storage.database import Database, RepositoryDAO
 
 log = get_logger(__name__)
 
@@ -60,7 +61,7 @@ class AnalysisPipeline:
     ) -> None:
         """
         Execute the analysis pipeline.
-        
+
         Args:
             repo_id:           The database ID of the repository.
             validation_result: The result of validation containing the file manifest.
@@ -73,10 +74,10 @@ class AnalysisPipeline:
         # ── Step 1: Detect Languages & Frameworks ─────────────────────────────
         if progress_callback:
             await progress_callback("detecting_languages", 0, 100, "Detecting languages...")
-            
+
         detector = LanguageDetector()
         profile = detector.detect(manifest, repo_path)
-        
+
         # Save primary language to Repository record
         repo_dao = RepositoryDAO(self._db)
         repo_record = await repo_dao.get_by_id(repo_id)
@@ -93,24 +94,24 @@ class AnalysisPipeline:
 
         if total_files > 0:
             semaphore = asyncio.Semaphore(self._max_workers)
-            
+
             async def parse_one(file_path: Path, idx: int) -> list[Any]:
                 async with semaphore:
                     parser = self._registry.get_parser(file_path.suffix)
                     if not parser:
                         return []
-                        
+
                     # Run CPU-bound parsing in executor thread
                     loop = asyncio.get_running_loop()
                     res = await loop.run_in_executor(None, parser.parse, file_path)
-                    
+
                     if res.success:
                         # Compute complexity metrics on functions
                         for sym in res.symbols:
                             if sym.type == "function":
                                 metrics = ComplexityScorer.score_function(sym.content, res.language)
                                 sym.metadata.update(metrics)
-                                
+
                         await self._bus.emit(
                             ASTParseCompletedEvent(
                                 repo_id=repo_id,
@@ -167,7 +168,7 @@ class AnalysisPipeline:
             # Clear old records for this repository if any exist
             await self._db.conn.execute("DELETE FROM edges WHERE source_id IN (SELECT id FROM nodes WHERE repo_id = ?)", (repo_id,))
             await self._db.conn.execute("DELETE FROM nodes WHERE repo_id = ?", (repo_id,))
-            
+
             # Insert Nodes
             node_insert_sql = """
                 INSERT INTO nodes (id, repo_id, type, name, file_path, start_line, end_line, content, metadata)
@@ -176,14 +177,14 @@ class AnalysisPipeline:
             for node_id, attrs in graph.nodes(data=True):
                 # Resolve content from original symbols list to save database space
                 content_val = next((s.content for s in parsed_symbols if s.id == node_id), None)
-                
+
                 # Copy properties out to avoid extra payload inside metadata json
                 node_type = attrs.get("type", "unknown")
                 name = attrs.get("name", "unknown")
                 file_path = attrs.get("file_path")
                 start_line = attrs.get("start_line")
                 end_line = attrs.get("end_line")
-                
+
                 meta_json = "{}"
                 # Filter out base keys from metadata payload
                 meta_filtered = {k: v for k, v in attrs.items() if k not in ("type", "name", "file_path", "start_line", "end_line")}
@@ -206,10 +207,10 @@ class AnalysisPipeline:
 
         duration = time.monotonic() - start_time
         await self._bus.emit(AnalysisPipelineCompleteEvent(repo_id=repo_id, duration_seconds=duration))
-        
+
         if progress_callback:
             await progress_callback("complete", 100, 100, "Analysis complete.")
-            
+
         log.info(
             "pipeline_finished",
             repo_id=repo_id,

@@ -39,13 +39,13 @@ class JavaScriptParser(BaseParser):
         # 1. Imports (ES6 imports & requires)
         for node in self._find_all(root, "import_statement", "lexical_declaration", "variable_declaration"):
             text = self._node_text(node, source)
-            
+
             # Direct ES6 Import: import foo from 'bar'
             if node.type == "import_statement":
                 source_node = node.child_by_field_name("source")
                 source_text = self._node_text(source_node, source) if source_node else ""
                 source_clean = source_text.strip("'\"")
-                
+
                 symbol = ParsedSymbol(
                     type="import",
                     name=text.split("\n")[0][:100],

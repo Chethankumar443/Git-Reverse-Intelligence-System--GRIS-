@@ -17,12 +17,12 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 import keyring
-from platformdirs import user_config_dir, user_data_dir, user_cache_dir
+from platformdirs import user_cache_dir, user_config_dir, user_data_dir
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 APP_NAME = "git-reverse"
@@ -138,13 +138,42 @@ class AppSettings(BaseSettings):
             return max(1, (os.cpu_count() or 2) - 1)
         return v
 
+    @model_validator(mode="before")
+    @classmethod
+    def load_from_config_json(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        config_path = _default_data_dir() / "config.json"
+        if config_path.exists():
+            try:
+                import json
+                saved = json.loads(config_path.read_text(encoding="utf-8"))
+                for key, val in saved.items():
+                    if key not in data or data[key] is None or data[key] == "":
+                        data[key] = val
+            except Exception:
+                pass
+        return data
+
     @model_validator(mode="after")
-    def ensure_directories_exist(self) -> "AppSettings":
+    def ensure_directories_exist(self) -> AppSettings:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         (self.data_dir / "exports").mkdir(parents=True, exist_ok=True)
         (self.data_dir / "skills").mkdir(parents=True, exist_ok=True)
         return self
+
+    def save_settings(self) -> None:
+        """Persist non-sensitive configuration settings to config.json."""
+        import json
+        config_path = self.data_dir / "config.json"
+        data = {
+            "username": self.username,
+            "default_model": self.default_model,
+            "theme": self.theme,
+            "analysis_workers": self.analysis_workers,
+        }
+        config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
     # ── Keyring Integration ───────────────────────────────────────────────────
     def get_openrouter_key(self) -> str | None:

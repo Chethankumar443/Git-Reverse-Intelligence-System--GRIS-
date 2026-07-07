@@ -85,7 +85,7 @@ class RustParser(BaseParser):
         for node in self._find_all(root, "impl_item"):
             type_node = node.child_by_field_name("type")
             trait_node = node.child_by_field_name("trait")
-            
+
             target_name = self._node_text(type_node, source) if type_node else "Unknown"
             if trait_node:
                 trait_name = self._node_text(trait_node, source)

@@ -219,7 +219,7 @@ class RepositoryValidator:
             try:
                 sm.update(init=False)  # Don't auto-initialise; just probe
                 is_init = sm.module_exists()
-            except Exception:  # noqa: BLE001
+            except Exception:
                 is_init = False
 
             result.append(

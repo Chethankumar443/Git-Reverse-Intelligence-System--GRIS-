@@ -20,18 +20,19 @@ import asyncio
 import hashlib
 import shutil
 import time
+from collections.abc import Callable, Coroutine
 from pathlib import Path
-from typing import Callable, Coroutine, Any
+from typing import Any
 
 import git
 from git import RemoteProgress
 
+from git_reverse.core.events import EventBus, RepositoryIngestedEvent, get_event_bus
 from git_reverse.core.exceptions import (
     CloneTimeoutError,
     InvalidRepositoryError,
     RepositoryCloneError,
 )
-from git_reverse.core.events import EventBus, RepositoryIngestedEvent, get_event_bus
 from git_reverse.core.logging import get_logger
 
 log = get_logger(__name__)

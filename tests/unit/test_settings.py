@@ -81,3 +81,23 @@ class TestAppSettings:
         s2 = get_settings()
         assert s1 is s2
         get_settings.cache_clear()
+
+    def test_save_and_load_config_json(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Verify that save_settings() saves to json, and AppSettings loads it."""
+        # Mock _default_data_dir to point to tmp_path
+        from git_reverse.config import settings
+        monkeypatch.setattr(settings, "_default_data_dir", lambda: tmp_path)
+
+        s1 = AppSettings(data_dir=tmp_path, cache_dir=tmp_path / "c")
+        s1.username = "chethan_test"
+        s1.default_model = "test-free-model"
+        s1.save_settings()
+
+        # Config file should be created
+        config_path = tmp_path / "config.json"
+        assert config_path.exists()
+
+        # Instantiate a new settings object, it should load from config.json automatically
+        s2 = AppSettings(data_dir=tmp_path, cache_dir=tmp_path / "c")
+        assert s2.username == "chethan_test"
+        assert s2.default_model == "test-free-model"

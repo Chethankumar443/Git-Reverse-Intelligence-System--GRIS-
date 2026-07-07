@@ -7,8 +7,6 @@ and builds a directed graph structure.
 
 from __future__ import annotations
 
-from typing import Any
-
 import networkx as nx
 
 from git_reverse.analysis.parsers.base import ParsedSymbol
@@ -23,7 +21,7 @@ class KnowledgeGraphBuilder:
     def build(self, symbols: list[ParsedSymbol]) -> nx.DiGraph:
         """
         Build a NetworkX DiGraph from a flat list of parsed symbols.
-        
+
         Nodes represent: modules, classes, functions, structs.
         Edges represent:
           - "contains" (class contains function, module contains class/function).
@@ -47,7 +45,7 @@ class KnowledgeGraphBuilder:
             }
             node_attrs.update(sym.metadata)
             self.graph.add_node(sym.id, **node_attrs)
-            
+
             if sym.type == "module":
                 file_modules[sym.file_path] = sym.id
 
@@ -56,10 +54,10 @@ class KnowledgeGraphBuilder:
         for sym in symbols:
             if sym.type == "module":
                 continue
-                
+
             # If function belongs to a class or module, link it
             parent_id = None
-            
+
             # Find class parent if defined in same file and covers the line range
             if sym.type == "function":
                 for other in symbols:
@@ -67,7 +65,7 @@ class KnowledgeGraphBuilder:
                         if other.start_line <= sym.start_line <= other.end_line:
                             parent_id = other.id
                             break
-                            
+
             # Fall back to containing module
             if not parent_id:
                 parent_id = file_modules.get(sym.file_path)
