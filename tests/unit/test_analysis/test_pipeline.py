@@ -7,6 +7,8 @@ from collections.abc import AsyncGenerator
 
 import pytest
 
+from typing import Any
+
 from git_reverse.analysis.pipeline import AnalysisPipeline
 from git_reverse.core.events import EventBus
 from git_reverse.ingestion.validator import RepositoryValidator
@@ -15,7 +17,7 @@ from git_reverse.storage.database import Database, Repository, RepositoryDAO
 
 @pytest.mark.asyncio
 async def test_pipeline_integration(
-    make_git_repo: ...,
+    make_git_repo: Any,
     db: Database,
     event_bus: EventBus,
 ) -> None:
@@ -66,7 +68,7 @@ def process_data(x):
     
     # Query database nodes
     async with db.conn.execute("SELECT * FROM nodes WHERE repo_id = 'repo-pipeline-test'") as cursor:
-        nodes = await cursor.fetchall()
+        nodes = list(await cursor.fetchall())
     
     assert len(nodes) >= 2  # module node + function node
     

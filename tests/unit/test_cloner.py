@@ -9,6 +9,7 @@ deterministic in CI without a network connection.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import git
 import pytest
@@ -29,7 +30,7 @@ from git_reverse.ingestion.validator import (
 
 # ── RepositoryValidator ───────────────────────────────────────────────────────
 class TestRepositoryValidator:
-    def test_validate_valid_repo(self, make_git_repo: ...) -> None:
+    def test_validate_valid_repo(self, make_git_repo: Any) -> None:
         repo_path: Path = make_git_repo("valid-repo")
         validator = RepositoryValidator(max_repo_size_mb=100)
         result = validator.validate(repo_path)
@@ -51,7 +52,7 @@ class TestRepositoryValidator:
         with pytest.raises(InvalidRepositoryError):
             validator.validate(tmp_path / "missing")
 
-    def test_size_limit_enforced(self, make_git_repo: ..., tmp_path: Path) -> None:
+    def test_size_limit_enforced(self, make_git_repo: Any, tmp_path: Path) -> None:
         """Repos exceeding the size limit must raise RepositoryTooLargeError."""
         repo_path: Path = make_git_repo("big-repo")
         # Set an absurdly small limit (0 MB) to trigger the check
@@ -60,7 +61,7 @@ class TestRepositoryValidator:
             validator.validate(repo_path)
         assert exc_info.value.limit_mb == 0
 
-    def test_manifest_classifies_source_files(self, make_git_repo: ...) -> None:
+    def test_manifest_classifies_source_files(self, make_git_repo: Any) -> None:
         repo_path: Path = make_git_repo(
             "classify-test",
             files={
@@ -82,7 +83,7 @@ class TestRepositoryValidator:
         assert "README.md" in doc_names
         assert "Dockerfile" in config_names or "pyproject.toml" in config_names
 
-    def test_manifest_excludes_generated_dirs(self, make_git_repo: ...) -> None:
+    def test_manifest_excludes_generated_dirs(self, make_git_repo: Any) -> None:
         files = {
             "src/main.py": "pass",
             "node_modules/lodash/index.js": "module.exports={}",
@@ -102,7 +103,7 @@ class TestRepositoryValidator:
             for part in path.parts:
                 assert part not in _GENERATED_DIRS, f"Generated dir leaked: {path}"
 
-    def test_manifest_excludes_binary_files(self, make_git_repo: ...) -> None:
+    def test_manifest_excludes_binary_files(self, make_git_repo: Any) -> None:
         files = {
             "src/main.py": "pass",
             "assets/logo.png": "\x89PNG\r\n",
@@ -133,14 +134,14 @@ class TestRepositoryValidator:
         result = validator.validate(parent)
         assert result.submodules == []
 
-    def test_file_manifest_size_accumulates(self, make_git_repo: ...) -> None:
+    def test_file_manifest_size_accumulates(self, make_git_repo: Any) -> None:
         files = {"a.py": "x" * 1000, "b.py": "y" * 2000}
         repo_path: Path = make_git_repo("size-test", files=files)
         validator = RepositoryValidator()
         result = validator.validate(repo_path)
         assert result.manifest.total_size_bytes >= 3000
 
-    def test_file_manifest_total_files_count(self, make_git_repo: ...) -> None:
+    def test_file_manifest_total_files_count(self, make_git_repo: Any) -> None:
         files = {
             "a.py": "pass",
             "b.py": "pass",
@@ -156,7 +157,7 @@ class TestRepositoryValidator:
 # ── RepositoryCloner ──────────────────────────────────────────────────────────
 class TestRepositoryCloner:
     async def test_clone_local_path(
-        self, make_git_repo: ..., tmp_path: Path, event_bus: EventBus
+        self, make_git_repo: Any, tmp_path: Path, event_bus: EventBus
     ) -> None:
         """Cloning a local directory should return its path without copying."""
         repo_path: Path = make_git_repo("local-target")
@@ -169,7 +170,7 @@ class TestRepositoryCloner:
         assert result_path == repo_path
 
     async def test_clone_local_path_emits_event(
-        self, make_git_repo: ..., tmp_path: Path, event_bus: EventBus
+        self, make_git_repo: Any, tmp_path: Path, event_bus: EventBus
     ) -> None:
         """A successful clone must emit a RepositoryIngestedEvent."""
         received: list[RepositoryIngestedEvent] = []
@@ -203,7 +204,7 @@ class TestRepositoryCloner:
             await cloner.clone(str(not_a_repo), repo_id="test-003")
 
     async def test_cache_hit_skips_clone(
-        self, make_git_repo: ..., tmp_path: Path, event_bus: EventBus, monkeypatch: pytest.MonkeyPatch
+        self, make_git_repo: Any, tmp_path: Path, event_bus: EventBus, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         """
         If the destination directory already exists, the cloner must reuse it
@@ -214,7 +215,7 @@ class TestRepositoryCloner:
 
         original_clone = git.Repo.clone_from
 
-        def patched_clone(url: str, *args: ..., **kwargs: ...) -> git.Repo:
+        def patched_clone(url: str, *args: Any, **kwargs: Any) -> git.Repo:
             clone_calls.append(url)
             return original_clone(url, *args, **kwargs)
 
