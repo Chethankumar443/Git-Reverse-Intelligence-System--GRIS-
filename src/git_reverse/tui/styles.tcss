@@ -349,3 +349,68 @@ CommandPalette {
     color: $text-muted;
     margin-left: 2;
 }
+
+/* Ingestion / Analysis Pipeline View */
+#analysis-view {
+    align: center middle;
+    width: 100%;
+    height: 100%;
+    background: $surface;
+    padding: 0 4;
+}
+
+#analysis-title {
+    color: $text;
+    text-style: bold;
+    margin-bottom: 2;
+    text-align: center;
+}
+
+#analysis-repo-name {
+    color: $text-muted;
+    margin-bottom: 1;
+    text-align: center;
+}
+
+#analysis-progress-bar {
+    width: 60;
+    margin-bottom: 2;
+}
+
+#analysis-pipeline-stages {
+    width: 40;
+    margin-bottom: 2;
+    align: center middle;
+}
+
+.stage-item {
+    margin-bottom: 1;
+    text-align: left;
+}
+
+.stage-item.pending {
+    color: $text-muted;
+}
+
+.stage-item.running {
+    color: $accent;
+    text-style: bold;
+}
+
+.stage-item.complete {
+    color: $success;
+    text-style: bold;
+}
+
+#analysis-current-task {
+    color: $text-muted;
+    text-align: center;
+    margin-top: 1;
+}
+
+#settings-status {
+    color: $error;
+    text-align: center;
+    margin-top: 1;
+    margin-bottom: 1;
+}

@@ -26,12 +26,31 @@ from git_reverse.storage.database import Database
 
 # ── Settings ──────────────────────────────────────────────────────────────────
 @pytest.fixture
-def settings(tmp_path: Path) -> AppSettings:
+def settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AppSettings:
     """
     Return a fresh AppSettings instance wired to a temp directory.
 
     Clears the lru_cache so every test gets an isolated settings object.
     """
+    import keyring
+    # Mock keyring to prevent reading/writing the real OS credential manager during tests
+    _fake_keyring: dict[tuple[str, str], str] = {}
+    monkeypatch.setattr(
+        keyring,
+        "get_password",
+        lambda svc, usr: _fake_keyring.get((svc, usr)),
+    )
+    monkeypatch.setattr(
+        keyring,
+        "set_password",
+        lambda svc, usr, pwd: _fake_keyring.update({(svc, usr): pwd}),
+    )
+    monkeypatch.setattr(
+        keyring,
+        "delete_password",
+        lambda svc, usr: _fake_keyring.pop((svc, usr), None),
+    )
+
     get_settings.cache_clear()
     return AppSettings(
         data_dir=tmp_path / "data",

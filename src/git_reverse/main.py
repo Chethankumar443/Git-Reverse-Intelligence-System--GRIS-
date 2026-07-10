@@ -44,12 +44,27 @@ def print_exit_banner(session_id: str, timestamp: str) -> None:
     print()
 
 
+class GitReverseGroup(click.Group):
+    """Custom click Group that dynamically defaults to the 'tui' command for unknown args."""
+
+    def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
+        if args:
+            first = args[0]
+            # If the first argument is not a known subcommand and doesn't start with a flag
+            if not first.startswith("-") and first not in self.list_commands(ctx):
+                args.insert(0, "tui")
+        return super().parse_args(ctx, args)
+
+
 # ── Root Group ────────────────────────────────────────────────────────────────
-@click.group(invoke_without_command=True, context_settings={"help_option_names": ["-h", "--help"]})
+@click.group(
+    cls=GitReverseGroup,
+    invoke_without_command=True,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 @click.version_option(__version__, "-V", "--version", prog_name="git-reverse")
-@click.argument("args", nargs=-1)
 @click.pass_context
-def cli(ctx: click.Context, args: tuple[str, ...]) -> None:
+def cli(ctx: click.Context) -> None:
     """
     Git Reverse — Repository Intelligence Platform.
 
@@ -57,9 +72,7 @@ def cli(ctx: click.Context, args: tuple[str, ...]) -> None:
     """
     _bootstrap()
     if ctx.invoked_subcommand is None:
-        # No sub-command -> launch TUI, passing session_id if provided in args
-        session_id = args[0] if args else None
-        ctx.invoke(tui, session_id=session_id)
+        ctx.invoke(tui, session_id=None)
 
 
 # ── TUI Command ───────────────────────────────────────────────────────────────
@@ -232,13 +245,13 @@ def doctor() -> None:
     table.add_column("Detail")
 
     def ok(label: str, detail: str = "") -> None:
-        table.add_row(label, "[green]✓ OK[/]", detail)
+        table.add_row(label, "[green]OK[/]", detail)
 
     def warn(label: str, detail: str = "") -> None:
-        table.add_row(label, "[yellow]⚠ WARN[/]", detail)
+        table.add_row(label, "[yellow]WARN[/]", detail)
 
     def fail(label: str, detail: str = "") -> None:
-        table.add_row(label, "[red]✗ FAIL[/]", detail)
+        table.add_row(label, "[red]FAIL[/]", detail)
 
     # Python version
     major, minor = sys.version_info[:2]

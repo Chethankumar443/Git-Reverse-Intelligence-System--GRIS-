@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """
 TUI Chat Widget.
 
@@ -88,9 +89,11 @@ class AssistantMessageWidget(Container):
     @on(Button.Pressed, ".copy-btn")
     def on_copy_pressed(self) -> None:
         if copy_to_clipboard(self.content):
-            self.app.notify("Copied to system clipboard!", severity="information")
+            if hasattr(self.app, "set_status_message"):
+                self.app.set_status_message("Copied to system clipboard!")
         else:
-            self.app.notify("Failed to copy text.", severity="error")
+            if hasattr(self.app, "set_status_message"):
+                self.app.set_status_message("Failed to copy text.")
 
 
 class ChatInput(Input):
@@ -318,7 +321,8 @@ class ChatPane(Vertical):
                 from git_reverse.storage.database import SessionDAO
                 session_dao = SessionDAO(self._db)
                 await session_dao.update_mode(self.session_id, mode)
-                self.app.notify(f"Switched mode to {mode.replace('_', ' ')}", severity="information")
+                if hasattr(self.app, "set_status_message"):
+                    self.app.set_status_message(f"Switched mode to {mode.replace('_', ' ')}")
             except Exception as exc:
                 log.error("failed_to_update_mode", error=str(exc))
 

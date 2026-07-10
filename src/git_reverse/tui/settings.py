@@ -50,6 +50,8 @@ class SettingsScreen(ModalScreen[None]):
                     id="github-token",
                 )
 
+            yield Label("", id="settings-status")
+
             with Container(id="buttons-row"):
                 yield Button("Cancel", id="cancel-btn", variant="error")
                 yield Button("Save", id="save-btn", variant="success")
@@ -68,7 +70,7 @@ class SettingsScreen(ModalScreen[None]):
         gh_token = self.query_one("#github-token", Input).value.strip()
 
         if not username:
-            self.app.notify("Username cannot be empty.", severity="error")
+            self.query_one("#settings-status", Label).update("[red]Username cannot be empty.[/]")
             return
 
         try:
@@ -90,5 +92,6 @@ class SettingsScreen(ModalScreen[None]):
         # 3. Persist updated configuration permanently
         self._settings.save_settings()
 
-        self.app.notify("Settings updated successfully.", severity="success")
+        if hasattr(self.app, "set_status_message"):
+            self.app.set_status_message("Settings updated successfully.")
         self.dismiss()
