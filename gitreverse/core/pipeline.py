@@ -74,7 +74,7 @@ class AnalysisPipeline:
         loop = asyncio.get_event_loop()
 
         try:
-            git_repo = await loop.run_in_executor(
+            await loop.run_in_executor(
                 None, lambda: clone_repository(url, local_path, token)
             )
         except Exception as e:
