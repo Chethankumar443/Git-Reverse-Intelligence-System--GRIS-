@@ -12,7 +12,7 @@ A developer pastes a public GitHub URL (e.g., https://github.com/facebook/react)
 
 **Why this priority**: This is the core value proposition. Without this, nothing else works.
 
-**Independent Test**: Can be fully tested by cloning a small public repo (<10k LOC), verifying the knowledge graph is generated, and querying it for architecture explanation. Delivers immediate value: user understands a foreign codebase in seconds.
+**Independent Test**: Can be tested by cloning a small public repo (<10k LOC), verifying the knowledge graph is generated, and querying it for architecture explanation. Delivers immediate value: user understands a foreign codebase in seconds.
 
 **Acceptance Scenarios**:
 1. **Given** a valid public GitHub URL, **When** user runs `analyze <url>`, **Then** system clones repo, runs analysis, and displays progress indicators for each stage (clone, parse, dependency analysis, architecture extraction, knowledge graph construction).
