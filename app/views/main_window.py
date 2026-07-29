@@ -1,8 +1,10 @@
+import os
 from PySide6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QStackedWidget, QFrame, QButtonGroup, QDialog, QCheckBox, QApplication
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap
 from app.viewmodels.analysis_vm import AnalysisViewModel
 from app.viewmodels.session_vm import SessionViewModel
 from app.viewmodels.settings_vm import SettingsViewModel
@@ -149,28 +151,47 @@ class MainWindow(QMainWindow):
         header_layout.setContentsMargins(16, 0, 16, 0)
         header_layout.setSpacing(8)
 
+        # Brand Logo Icon
+        logo_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".agents", "skills", "favicon (1)")
+        icon_path = os.path.join(logo_dir, "favicon.ico")
+        png_path = os.path.join(logo_dir, "favicon-96x96.png")
+
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+
+        if os.path.exists(png_path):
+            lbl_logo = QLabel()
+            pix = QPixmap(png_path).scaled(20, 20, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            lbl_logo.setPixmap(pix)
+            header_layout.addWidget(lbl_logo)
+
         self.lbl_title = QLabel("Git Reverse")
-        self.lbl_title.setStyleSheet("font-weight: 700; font-size: 14px;")
+        self.lbl_title.setObjectName("title_heading")
+        self.lbl_title.setStyleSheet("font-weight: 700; font-size: 15px; letter-spacing: -0.3px;")
 
         self.lbl_ver = QLabel("v1.1.0")
-        self.lbl_ver.setStyleSheet(
-            "font-size: 10px; font-family: 'Geist Mono', monospace; "
-            "border-radius: 4px; padding: 2px 6px;"
-        )
         self.lbl_ver.setObjectName("ver_badge")
 
         # §49 Offline indicator
         self._offline_indicator = QLabel("Offline Mode")
         self._offline_indicator.setStyleSheet(
-            "font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; "
+            "font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 12px; "
             "background: rgba(234, 179, 8, 0.15); color: #ca8a04; border: 1px solid rgba(234, 179, 8, 0.3);"
         )
         self._offline_indicator.setVisible(False)
+
+        # Quick Theme Toggle Button in Header
+        self.btn_theme_toggle = QPushButton("Dark Mode")
+        self.btn_theme_toggle.setProperty("class", "g-btn-chip")
+        self.btn_theme_toggle.setCursor(Qt.PointingHandCursor)
+        self.btn_theme_toggle.setFixedHeight(28)
+        self.btn_theme_toggle.clicked.connect(self._toggle_quick_theme)
 
         header_layout.addWidget(self.lbl_title)
         header_layout.addWidget(self.lbl_ver)
         header_layout.addStretch()
         header_layout.addWidget(self._offline_indicator)
+        header_layout.addWidget(self.btn_theme_toggle)
         main_layout.addWidget(header)
 
         # ── Body: Sidebar + Stack ─────────────────────────────────────────────
@@ -182,7 +203,7 @@ class MainWindow(QMainWindow):
         # ── Sidebar ───────────────────────────────────────────────────────────
         sidebar = QFrame()
         sidebar.setObjectName("sidebar")
-        sidebar.setFixedWidth(220)
+        sidebar.setFixedWidth(230)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(12, 16, 12, 16)
         sidebar_layout.setSpacing(4)
@@ -195,7 +216,7 @@ class MainWindow(QMainWindow):
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
 
-        self.btn_analyze = QPushButton("Analyze Repository")
+        self.btn_analyze = QPushButton("Ingest & Analyze")
         self.btn_analyze.setCheckable(True)
         self.btn_analyze.setChecked(True)
         self.btn_analyze.setCursor(Qt.PointingHandCursor)
@@ -204,7 +225,7 @@ class MainWindow(QMainWindow):
         self.btn_kb.setCheckable(True)
         self.btn_kb.setCursor(Qt.PointingHandCursor)
 
-        self.btn_chat = QPushButton("KB Chat Console")
+        self.btn_chat = QPushButton("Copilot Chat")
         self.btn_chat.setCheckable(True)
         self.btn_chat.setCursor(Qt.PointingHandCursor)
 
@@ -214,9 +235,9 @@ class MainWindow(QMainWindow):
 
         sep_lbl = QLabel("SYSTEM")
         sep_lbl.setProperty("class", "g-eyebrow")
-        sep_lbl.setContentsMargins(6, 12, 0, 4)
+        sep_lbl.setContentsMargins(6, 14, 0, 4)
 
-        self.btn_health = QPushButton("Health Center")         # §67
+        self.btn_health = QPushButton("Health Monitor")    # §67
         self.btn_health.setCheckable(True)
         self.btn_health.setCursor(Qt.PointingHandCursor)
 
@@ -226,7 +247,7 @@ class MainWindow(QMainWindow):
 
         for btn in [self.btn_analyze, self.btn_kb, self.btn_chat,
                     self.btn_library, self.btn_health, self.btn_settings]:
-            btn.setFixedHeight(38)
+            btn.setFixedHeight(40)
 
         self.nav_group.addButton(self.btn_analyze, self.IDX_ANALYZE)
         self.nav_group.addButton(self.btn_kb, self.IDX_KB)
@@ -248,16 +269,13 @@ class MainWindow(QMainWindow):
         # Sidebar Footer Card
         self.sidebar_footer = QFrame()
         self.sidebar_footer.setObjectName("sidebar_footer")
-        self.sidebar_footer.setStyleSheet(
-            "QFrame#sidebar_footer { background: palette(alternate-base); border: 1px solid palette(mid); border-radius: 8px; padding: 6px; }"
-        )
         foot_layout = QVBoxLayout(self.sidebar_footer)
-        foot_layout.setContentsMargins(10, 8, 10, 8)
-        foot_layout.setSpacing(3)
-        lbl_arch = QLabel("Python Qt6 MVVM Engine")
-        lbl_arch.setStyleSheet("font-size: 11px; font-weight: 600;")
-        lbl_sec = QLabel("Secrets: OS Keyring Store")
-        lbl_sec.setStyleSheet("font-size: 10px; color: #71717a;")
+        foot_layout.setContentsMargins(12, 10, 12, 10)
+        foot_layout.setSpacing(4)
+        lbl_arch = QLabel("Git Reverse System")
+        lbl_arch.setStyleSheet("font-size: 12px; font-weight: 700;")
+        lbl_sec = QLabel("● FTS5 Hybrid Engine Active")
+        lbl_sec.setStyleSheet("font-size: 11px; color: #788c5d; font-weight: 600;")
         foot_layout.addWidget(lbl_arch)
         foot_layout.addWidget(lbl_sec)
         sidebar_layout.addWidget(self.sidebar_footer)
@@ -294,10 +312,34 @@ class MainWindow(QMainWindow):
         body_layout.addWidget(self.view_stack, 1)
         main_layout.addWidget(body, 1)
 
-    # ── Navigation ─────────────────────────────────────────────────────────────
+    # ── Navigation & View Transitions ────────────────────────────────────────
+
+    def _animate_stack_transition(self, target_idx: int):
+        """Applies a smooth 150ms opacity fade-in transition when switching workspace views."""
+        target_widget = self.view_stack.widget(target_idx)
+        if not target_widget:
+            self.view_stack.setCurrentIndex(target_idx)
+            return
+
+        from PySide6.QtWidgets import QGraphicsOpacityEffect
+        from PySide6.QtCore import QPropertyAnimation, QEasingCurve
+
+        # Set up opacity effect on target widget
+        effect = QGraphicsOpacityEffect(target_widget)
+        target_widget.setGraphicsEffect(effect)
+
+        self.view_stack.setCurrentIndex(target_idx)
+
+        anim = QPropertyAnimation(effect, b"opacity", self)
+        anim.setDuration(150)
+        anim.setStartValue(0.2)
+        anim.setEndValue(1.0)
+        anim.setEasingCurve(QEasingCurve.OutCubic)
+        anim.finished.connect(lambda: target_widget.setGraphicsEffect(None))
+        anim.start(QPropertyAnimation.DeleteWhenStopped)
 
     def on_nav_clicked(self, idx: int):
-        self.view_stack.setCurrentIndex(idx)
+        self._animate_stack_transition(idx)
         if idx == self.IDX_KB:
             self.session_vm.refresh_sessions()
         elif idx == self.IDX_LIBRARY:
@@ -311,7 +353,7 @@ class MainWindow(QMainWindow):
 
     def on_open_chat_for_session_id(self, session_id: int):
         self.btn_chat.setChecked(True)
-        self.view_stack.setCurrentIndex(self.IDX_CHAT)
+        self._animate_stack_transition(self.IDX_CHAT)
         self.view_chat.select_session_by_id(session_id)
 
     def _on_library_open_kb(self, session_id: int):
@@ -339,8 +381,18 @@ class MainWindow(QMainWindow):
             child.style().polish(child)
             child.update()
 
+    def _toggle_quick_theme(self):
+        new_theme = "dark" if self._current_theme == "light" else "light"
+        self.apply_theme(new_theme)
+        # Update saved settings
+        config = SecretsManager.load_config()
+        config["theme"] = new_theme
+        SecretsManager.save_config(config)
+
     def apply_theme(self, theme: str):
         self._current_theme = theme
+        if hasattr(self, "btn_theme_toggle"):
+            self.btn_theme_toggle.setText("Light Mode" if theme == "dark" else "Dark Mode")
         qss = GEIST_DARK_QSS if theme == "dark" else GEIST_LIGHT_QSS
 
         app = QApplication.instance()

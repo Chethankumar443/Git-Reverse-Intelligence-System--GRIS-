@@ -255,13 +255,14 @@ class DatabaseManager:
 
         db: SASession = self.SessionLocal()
         try:
-            # Try FTS5 MATCH query first
+            # Try FTS5 MATCH query first with phrase escaping to prevent operator crashes
             try:
+                fts_query = '"' + clean_q.replace('"', '""') + '"'
                 fts_res = db.execute(text("""
                     SELECT content_rowid FROM session_records_fts
                     WHERE session_records_fts MATCH :q
                     ORDER BY content_rowid DESC;
-                """), {"q": clean_q}).fetchall()
+                """), {"q": fts_query}).fetchall()
                 if fts_res:
                     row_ids = [r[0] for r in fts_res]
                     return db.query(SessionRecord).filter(SessionRecord.id.in_(row_ids)).all()
@@ -478,25 +479,40 @@ class DatabaseManager:
         config = SecretsManager.load_config()
         # Remove sensitive keys from backup
         config.pop("api_key", None)
+        config.pop("github_token", None)
+        config.pop("secret_key", None)
         return {"sessions": sessions, "settings": config, "export_version": "1.1"}
 
     def import_sessions_from_json(self, data: Dict[str, Any]) -> int:
-        """Imports sessions from a backup JSON dict. Returns count imported."""
-        sessions = data.get("sessions", [])
+        """Imports sessions from a backup JSON dict after validating schema. Returns count imported."""
+        if not isinstance(data, dict) or "sessions" not in data:
+            raise ValueError("Invalid backup format: root must be a JSON object containing a 'sessions' array.")
+        sessions = data.get("sessions")
+        if not isinstance(sessions, list):
+            raise ValueError("Invalid backup format: 'sessions' must be a list of session objects.")
+
         count = 0
         db: SASession = self.SessionLocal()
         try:
             for s in sessions:
+                if not isinstance(s, dict):
+                    continue
+                repo_url = str(s.get("repo_url", "")).strip()
+                repo_name = str(s.get("repo_name", "")).strip()
+                if not repo_url and not repo_name:
+                    continue
+
                 # Check if session already exists by repo_url + created_at
                 existing = db.query(SessionRecord).filter(
-                    SessionRecord.repo_url == s.get("repo_url", ""),
+                    SessionRecord.repo_url == repo_url,
                     SessionRecord.created_at == s.get("created_at", ""),
                 ).first()
                 if existing:
                     continue
+
                 record = SessionRecord(
-                    repo_url=s.get("repo_url", ""),
-                    repo_name=s.get("repo_name", ""),
+                    repo_url=repo_url,
+                    repo_name=repo_name or repo_url,
                     language=s.get("language", "Unknown"),
                     file_count=s.get("file_count", 0),
                     generated_prompt=s.get("generated_prompt", ""),
@@ -511,8 +527,9 @@ class DatabaseManager:
                 db.add(record)
                 count += 1
             db.commit()
-        except Exception:
-            pass
+        except Exception as e:
+            db.rollback()
+            raise ValueError(f"Failed to import backup sessions into database: {str(e)}")
         finally:
             db.close()
         return count

@@ -39,18 +39,6 @@ class AnalyzeView(QWidget):
         self.url_input.setMinimumHeight(38)
         self.url_input.returnPressed.connect(self.on_ingest_clicked)
 
-        # §59 Prompt type selector
-        type_lbl = QLabel("Target:")
-        type_lbl.setStyleSheet("font-size: 12px; font-weight: 500; color: #71717a;")
-
-        self.prompt_type_combo = QComboBox()
-        self.prompt_type_combo.addItems([
-            "Clone Prompt", "Architecture Prompt", "Migration Prompt", "Documentation Prompt"
-        ])
-        self.prompt_type_combo.setMinimumHeight(38)
-        self.prompt_type_combo.setFixedWidth(190)
-        self.prompt_type_combo.setToolTip("Select prompt generation target (§59)")
-
         self.ingest_btn = QPushButton("Ingest Repository")
         self.ingest_btn.setProperty("class", "g-btn-solid")
         self.ingest_btn.setCursor(Qt.PointingHandCursor)
@@ -66,11 +54,15 @@ class AnalyzeView(QWidget):
 
         top_layout.addWidget(url_label)
         top_layout.addWidget(self.url_input, 1)
-        top_layout.addWidget(type_lbl)
-        top_layout.addWidget(self.prompt_type_combo)
         top_layout.addWidget(self.ingest_btn)
         top_layout.addWidget(self.cancel_btn)
         layout.addWidget(top_bar)
+
+        # Reusable Async State Contract Widget
+        from app.views.components import AsyncStateWidget
+        self.state_widget = AsyncStateWidget()
+        self.state_widget.retry_requested.connect(self.on_ingest_clicked)
+        layout.addWidget(self.state_widget)
 
         # §49 Offline Banner
         self._offline_banner = QLabel(
@@ -255,21 +247,22 @@ class AnalyzeView(QWidget):
     def on_ingest_clicked(self):
         url = self.url_input.text().strip()
         if not url:
-            QMessageBox.warning(self, "Input Required", "Please enter a GitHub repository URL.")
+            self.state_widget.set_error("Repository URL is required.", override_msg="Please enter a valid GitHub repository URL.")
             return
         if not url.startswith("https://github.com/"):
-            QMessageBox.warning(self, "Invalid URL", "URL must start with: https://github.com/owner/repo")
+            self.state_widget.set_error("Invalid GitHub URL format", override_msg="Repository URL must start with https://github.com/owner/repository")
             return
         self.log_output.clear()
         self.prompt_editor.clear()
         self._secret_banner.setVisible(False)
         self._progress_pct_lbl.setVisible(False)
-        prompt_type = self.prompt_type_combo.currentText()
-        self.vm.start_analysis(url, prompt_type=prompt_type)
+        self.state_widget.set_loading("Connecting to GitHub and analyzing repository...")
+        self.vm.start_analysis(url, prompt_type="Clone Prompt")
 
     def on_cancel_clicked(self):
         self.vm.cancel_analysis()
         self.log_output.appendPlainText("> Analysis cancelled by user.")
+        self.state_widget.set_idle("Analysis cancelled by user.")
 
     def on_copy_prompt_clicked(self):
         text = self.prompt_editor.toPlainText()
@@ -280,6 +273,7 @@ class AnalyzeView(QWidget):
 
     def on_progress(self, msg: str):
         self.log_output.appendPlainText(f"> {msg}")
+        self.state_widget.set_loading(msg)
         if self._progress_pct_lbl.isVisible():
             current_text = self._progress_pct_lbl.text().split(" — ")[0]
             self._progress_pct_lbl.setText(f"{current_text} — {msg}")
@@ -314,6 +308,7 @@ class AnalyzeView(QWidget):
             self.progress_bar.setValue(done)
             self._progress_pct_lbl.setVisible(True)
             self._progress_pct_lbl.setText(f"Analyzing: {done:,} / {total:,} files ({pct}%)")
+            self.state_widget.set_loading(f"Analyzing repository code...", progress=done, total=total)
 
     def on_secrets_found(self, findings: list):
         high = [f for f in findings if f.get("severity") == "high"]
@@ -339,7 +334,7 @@ class AnalyzeView(QWidget):
 
     def on_failed(self, err: str):
         self.log_output.appendPlainText(f"\n[ERROR] {err}")
-        QMessageBox.critical(self, "Analysis Failed", err)
+        self.state_widget.set_error(err)
 
     def on_chat_ai_clicked(self):
         if self._current_session_id:
@@ -349,6 +344,7 @@ class AnalyzeView(QWidget):
         self._current_session_id = session_id
         self.btn_chat_ai.show()
         self.log_output.appendPlainText(f"\n[DONE] Session #{session_id} persisted to SQLite.")
+        self.state_widget.set_success(f"Analysis complete! Session #{session_id} saved to Knowledge Base.")
 
     def on_state_changed(self, is_analyzing: bool):
         self.ingest_btn.setEnabled(not is_analyzing)
@@ -357,4 +353,5 @@ class AnalyzeView(QWidget):
         self.ingest_btn.setText("Analyzing…" if is_analyzing else "Ingest Repository")
         if not is_analyzing:
             self.progress_bar.setRange(0, 0)
+            self._progress_pct_lbl.setVisible(False)
             self._progress_pct_lbl.setVisible(False)

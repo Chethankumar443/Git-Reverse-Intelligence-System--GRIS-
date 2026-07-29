@@ -10,6 +10,7 @@ a = Analysis(
     binaries=[],
     datas=[
         ('app', 'app'),
+        ('.agents', '.agents'),
         ('DESIGN-vercel.md', '.'),
     ],
     hiddenimports=[
@@ -50,6 +51,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=False,  # Single .exe, no console window (US1 / trd §9)
+    icon='.agents/skills/favicon (1)/favicon.ico',
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,

@@ -2,7 +2,7 @@ import datetime
 import time
 import requests
 from typing import Generator, Optional, Dict, Any, List, Tuple
-from openai import OpenAI, APIError, RateLimitError, APIConnectionError
+from openai import OpenAI, APIError, RateLimitError, APIConnectionError, APITimeoutError
 
 SYSTEM_PROMPT_TEMPLATE = """You are Git Reverse — an elite AI systems architect.
 Your task is to analyze the provided repository file manifest, structure, and facts, and generate a standardized, highly detailed AI "Recreation Prompt".
@@ -49,28 +49,32 @@ KNOWN_FREE_MODELS = {
     "nousresearch/nous-capybara-7b:free",
 }
 
-# §58 AI Assistant Modes — tone/depth modifiers applied as system prompt addenda
+# §58 AI Assistant Modes — specialized system prompt templates for KB Chat Console
 AI_MODES: dict = {
-    "General": "",
+    "General": (
+        "You are Git Reverse AI — an evidence-grounded technical assistant for repository intelligence.\n"
+        "Analyze repository architectures, code structures, and dependency trees.\n"
+        "Be concise, precise, and cite provided evidence explicitly (including file paths, symbol names, and exact line numbers) when applicable."
+    ),
     "Explain": (
-        "\n\nINSTRUCTION: You are in EXPLAIN MODE. Explain every concept as if the user "
-        "is encountering this codebase for the first time. Use simple language, "
-        "analogies, and step-by-step breakdowns. Avoid jargon without definition."
+        "You are Git Reverse AI in EXPLAIN MODE — a patient and clear engineering educator.\n"
+        "Explain repository concepts, initialization flows, and code logic as if the user is encountering this codebase for the first time.\n"
+        "Use step-by-step breakdowns, clear analogies, and simple language. Define any technical terms and highlight key entrypoint symbols and line numbers."
     ),
     "Architect": (
-        "\n\nINSTRUCTION: You are in ARCHITECT MODE. Focus exclusively on system design: "
-        "component boundaries, data flows, design patterns, scalability concerns, "
-        "trade-offs, and architectural decisions. Be precise and opinionated."
+        "You are Git Reverse AI in ARCHITECT MODE — an elite software systems architect.\n"
+        "Focus on high-level system design: component boundaries, design patterns, data flow boundaries, scalability bottlenecks, "
+        "modularity, IPC protocols, and engineering trade-offs. Evaluate how the repository modules interact and cite exact line numbers."
     ),
     "Developer": (
-        "\n\nINSTRUCTION: You are in DEVELOPER MODE. Focus on implementation-level detail: "
-        "how to extend or modify the code, API contracts, data models, error handling, "
-        "testing strategies, and specific code patterns. Provide concrete examples."
+        "You are Git Reverse AI in DEVELOPER MODE — a senior hands-on software engineer.\n"
+        "Focus on practical implementation detail: API contracts, data models, error handling, function signatures, line numbers, "
+        "and concrete instructions on how to extend, modify, debug, or refactor specific modules in the codebase."
     ),
     "Documentation": (
-        "\n\nINSTRUCTION: You are in DOCUMENTATION MODE. Generate structured, professional "
-        "documentation. Use headers, bullet points, tables, and code blocks where appropriate. "
-        "Format output suitable for inclusion in a README, wiki, or engineering handbook."
+        "You are Git Reverse AI in DOCUMENTATION MODE — a technical documentation specialist.\n"
+        "Generate comprehensive, professional engineering documentation suitable for inclusion in a README, wiki, or technical specification.\n"
+        "Use structured Markdown with headers, bulleted lists, comparative tables, and code snippets referencing exact symbol line numbers."
     ),
 }
 
@@ -249,7 +253,7 @@ class LLMClient:
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
-            timeout=30.0,
+            timeout=120.0,  # Increased timeout to 120s to support large prompt streaming without timing out
             default_headers=extra_headers if extra_headers else None,
         )
 
@@ -340,6 +344,15 @@ File Tree Sample ({len(file_list)} files total):
                 else:
                     yield "\n\n[Error: Rate limit exceeded after all retries. Try a free model or wait before retrying.]"
 
+            except APITimeoutError:
+                yield (
+                    f"\n\n[Read Timeout Error]\n"
+                    f"The provider stream timed out while receiving output.\n"
+                    f"• Cause: Provider network latency or slow model queue.\n"
+                    f"• Fix: Click 'Ingest Repository' to retry, or switch to a fast model in Settings (e.g., meta-llama/llama-3.3-70b-instruct:free or google/gemini-2.0-flash-exp:free)."
+                )
+                return
+
             except APIConnectionError as e:
                 yield f"\n\n[Connection error: {str(e)}\nCheck your internet connection and Base URL in Settings.]"
                 return
@@ -358,12 +371,12 @@ File Tree Sample ({len(file_list)} files total):
                         f"• Or add credits at https://openrouter.ai/settings/credits"
                     )
                 elif status == 401 or "401" in err_str:
-                    key_prefix = self.api_key[:8] + "..." if len(self.api_key) > 8 else "none"
+                    key_configured = "Yes (Saved in Keyring)" if self.api_key else "No"
                     yield (
                         f"\n\n[API Error (HTTP 401 — Unauthorized / Invalid API Key)]\n"
                         f"• Base URL: {self.base_url}\n"
                         f"• Model ID: {self.model_id}\n"
-                        f"• Key Prefix: {key_prefix}\n\n"
+                        f"• API Key Configured: {key_configured}\n\n"
                         f"Troubleshooting Instructions:\n"
                         f"1. Open Settings -> check Provider & API Key match:\n"
                         f"   - For OpenRouter ({self.base_url}): Key MUST start with 'sk-or-v1-'.\n"

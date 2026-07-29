@@ -399,6 +399,13 @@ class FirstRunWizard(QDialog):
             "background: rgba(113, 113, 122, 0.08); border: 1px solid palette(mid);"
         )
         layout.addWidget(self._complete_summary)
+
+        layout.addSpacing(10)
+        self._chk_create_shortcut = QCheckBox("Create Desktop shortcut automatically for fast access")
+        self._chk_create_shortcut.setChecked(True)
+        self._chk_create_shortcut.setStyleSheet("font-size: 12px; font-weight: 500;")
+        layout.addWidget(self._chk_create_shortcut)
+
         layout.addStretch()
         return w
 
@@ -456,6 +463,12 @@ class FirstRunWizard(QDialog):
         config = SecretsManager.load_config()
         config["first_run_complete"] = True
         SecretsManager.save_config(config)
+
+        # Create desktop shortcut if checked
+        if hasattr(self, "_chk_create_shortcut") and self._chk_create_shortcut.isChecked():
+            from app.services.shortcut import create_desktop_shortcut
+            create_desktop_shortcut("Git Reverse")
+
         self.completed.emit()
         self.accept()
 

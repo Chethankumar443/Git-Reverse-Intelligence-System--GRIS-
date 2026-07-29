@@ -2,11 +2,11 @@
 # IMPORTANT: Qt QSS uses property selectors [class="x"], NOT CSS dot-notation ".x"
 
 _BASE = """
-/* ════════════════ Global Reset ════════════════ */
+/* ════════════════ Global Reset & Typography ════════════════ */
 QWidget {{
     color: {text};
     background-color: {bg};
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+    font-family: 'Geist', 'Outfit', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 13px;
     border: none;
     outline: none;
@@ -21,10 +21,28 @@ QDialog {{
     color: {text};
 }}
 
-/* ════════════════ Title Header ════════════════ */
+/* ════════════════ Title Header Bar ════════════════ */
 QFrame#titlebar {{
     background-color: {surface};
     border-bottom: 1px solid {border};
+}}
+
+QLabel#title_heading {{
+    font-size: 15px;
+    font-weight: 700;
+    color: {text};
+    letter-spacing: -0.3px;
+}}
+
+QLabel#ver_badge {{
+    font-family: 'Geist Mono', 'Consolas', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: {muted};
+    background-color: {hover};
+    border: 1px solid {border};
+    border-radius: 6px;
+    padding: 2px 8px;
 }}
 
 /* ════════════════ Sidebar ════════════════ */
@@ -37,7 +55,7 @@ QFrame#sidebar {{
 QFrame#sidebar > QPushButton {{
     text-align: left;
     padding: 10px 14px;
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid transparent;
     background-color: transparent;
     color: {nav_muted};
@@ -47,27 +65,37 @@ QFrame#sidebar > QPushButton {{
 QFrame#sidebar > QPushButton:hover {{
     background-color: {hover};
     color: {text};
-    border-color: transparent;
+    border-color: {border};
 }}
 QFrame#sidebar > QPushButton:checked {{
     background-color: {card};
-    border: 1px solid {border};
+    border: 1px solid {border_strong};
     color: {text};
     font-weight: 600;
 }}
 
-/* ════════════════ Pane Cards (g-pane) ════════════════ */
+/* ════════════════ Pane Cards & Bento (g-pane) ════════════════ */
 QFrame[class="g-pane"] {{
     background-color: {card};
     border: 1px solid {border};
-    border-radius: 8px;
+    border-radius: 12px;
+}}
+
+QFrame[class="g-bento-card"] {{
+    background-color: {card};
+    border: 1px solid {border};
+    border-radius: 12px;
+    padding: 14px;
+}}
+QFrame[class="g-bento-card"]:hover {{
+    border-color: {border_strong};
 }}
 
 /* ════════════════ Group Boxes ════════════════ */
 QGroupBox {{
     background-color: {card};
     border: 1px solid {border};
-    border-radius: 8px;
+    border-radius: 10px;
     margin-top: 16px;
     padding-top: 20px;
     font-weight: 600;
@@ -76,23 +104,25 @@ QGroupBox {{
 QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    left: 12px;
+    left: 14px;
     top: -1px;
-    padding: 2px 10px;
+    padding: 3px 12px;
     background-color: {card};
     color: {text};
     border: 1px solid {border};
-    border-radius: 4px;
-    font-size: 12px;
+    border-radius: 6px;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }}
 
-/* ════════════════ Base Buttons ════════════════ */
+/* ════════════════ Base Buttons & Pills ════════════════ */
 QPushButton {{
     color: {text};
     background-color: {card};
     border: 1px solid {border};
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 8px 16px;
     font-weight: 500;
     font-size: 13px;
@@ -116,7 +146,7 @@ QPushButton[class="g-btn-solid"] {{
     color: {ink_text};
     font-weight: 600;
     border: 1px solid {ink};
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 8px 18px;
 }}
 QPushButton[class="g-btn-solid"]:hover {{
@@ -138,7 +168,7 @@ QPushButton[class="g-btn-ghost"] {{
     color: {text};
     font-weight: 500;
     border: 1px solid {border};
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 8px 16px;
 }}
 QPushButton[class="g-btn-ghost"]:hover {{
@@ -146,14 +176,14 @@ QPushButton[class="g-btn-ghost"]:hover {{
     border-color: {border_strong};
 }}
 
-/* Chip button */
+/* Chip / Pill button */
 QPushButton[class="g-btn-chip"] {{
     background-color: {chip_bg};
     color: {chip_text};
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
-    border-radius: 12px;
-    padding: 4px 12px;
+    border-radius: 16px;
+    padding: 5px 14px;
     border: 1px solid {border};
 }}
 QPushButton[class="g-btn-chip"]:hover {{
@@ -167,14 +197,14 @@ QLineEdit {{
     background-color: {input_bg};
     color: {text};
     border: 1px solid {border};
-    border-radius: 6px;
-    padding: 8px 12px;
+    border-radius: 8px;
+    padding: 8px 14px;
     font-size: 13px;
     selection-background-color: {sel_bg};
     selection-color: {sel_text};
 }}
 QLineEdit:focus {{
-    border-color: {ink_dim};
+    border-color: {ink};
 }}
 QLineEdit:read-only {{
     color: {muted};
@@ -185,14 +215,14 @@ QPlainTextEdit, QTextEdit {{
     background-color: {input_bg};
     color: {text};
     border: 1px solid {border};
-    border-radius: 6px;
-    padding: 8px 12px;
+    border-radius: 8px;
+    padding: 10px 14px;
     font-size: 13px;
     selection-background-color: {sel_bg};
     selection-color: {sel_text};
 }}
 QPlainTextEdit:focus, QTextEdit:focus {{
-    border-color: {ink_dim};
+    border-color: {ink};
 }}
 
 /* ════════════════ ComboBox ════════════════ */
@@ -200,16 +230,16 @@ QComboBox {{
     background-color: {input_bg};
     color: {text};
     border: 1px solid {border};
-    border-radius: 6px;
-    padding: 6px 12px;
+    border-radius: 8px;
+    padding: 6px 14px;
     font-size: 13px;
-    min-height: 28px;
+    min-height: 30px;
 }}
 QComboBox:hover {{
     border-color: {border_strong};
 }}
 QComboBox:focus {{
-    border-color: {ink_dim};
+    border-color: {ink};
 }}
 QComboBox::drop-down {{
     subcontrol-origin: padding;
@@ -221,16 +251,16 @@ QComboBox QAbstractItemView {{
     background-color: {card};
     color: {text};
     border: 1px solid {border_strong};
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 4px;
     selection-background-color: {ink};
     selection-color: {ink_text};
     outline: none;
 }}
 QComboBox QAbstractItemView::item {{
-    min-height: 30px;
-    padding: 4px 10px;
-    border-radius: 4px;
+    min-height: 32px;
+    padding: 4px 12px;
+    border-radius: 6px;
     color: {text};
     background-color: {card};
 }}
@@ -246,7 +276,7 @@ QComboBox QAbstractItemView::item:selected {{
 /* ════════════════ Tab Widget ════════════════ */
 QTabWidget::pane {{
     border: 1px solid {border};
-    border-radius: 8px;
+    border-radius: 10px;
     background-color: {card};
     top: -1px;
 }}
@@ -255,12 +285,12 @@ QTabBar::tab {{
     color: {muted};
     border: 1px solid {border};
     border-bottom: none;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    padding: 8px 16px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    padding: 9px 18px;
     font-size: 12px;
     font-weight: 500;
-    margin-right: 3px;
+    margin-right: 4px;
 }}
 QTabBar::tab:hover {{
     background-color: {hover};
@@ -273,30 +303,27 @@ QTabBar::tab:selected {{
     border-bottom: 2px solid {ink};
 }}
 
-/* ════════════════ List Widget ════════════════ */
-QListWidget {{
+/* ════════════════ List & Tree Widgets ════════════════ */
+QListWidget, QTreeWidget, QTableView {{
     background-color: {card};
     color: {text};
     border: 1px solid {border};
-    border-radius: 6px;
+    border-radius: 8px;
     padding: 4px;
     outline: none;
 }}
-QListWidget::item {{
-    padding: 8px 10px;
-    border-radius: 4px;
+QListWidget::item, QTreeWidget::item {{
+    padding: 8px 12px;
+    border-radius: 6px;
     color: {text};
     background-color: transparent;
-    font-size: 12px;
+    font-size: 13px;
 }}
-QListWidget::item:alternate {{
-    background-color: {surface};
-}}
-QListWidget::item:hover {{
+QListWidget::item:hover, QTreeWidget::item:hover {{
     background-color: {hover};
     color: {text};
 }}
-QListWidget::item:selected {{
+QListWidget::item:selected, QTreeWidget::item:selected {{
     background-color: {item_sel_bg};
     color: {item_sel_text};
     font-weight: 600;
@@ -306,15 +333,15 @@ QListWidget::item:selected {{
 QProgressBar {{
     background-color: {border};
     border: none;
-    border-radius: 2px;
-    height: 4px;
-    max-height: 4px;
+    border-radius: 4px;
+    height: 6px;
+    max-height: 6px;
     text-align: center;
     color: transparent;
 }}
 QProgressBar::chunk {{
     background-color: {ink};
-    border-radius: 2px;
+    border-radius: 4px;
 }}
 
 /* ════════════════ Splitter ════════════════ */
@@ -322,31 +349,31 @@ QSplitter::handle {{
     background-color: {border};
 }}
 QSplitter::handle:horizontal {{
-    width: 1px;
+    width: 2px;
 }}
 QSplitter::handle:vertical {{
-    height: 1px;
+    height: 2px;
 }}
 QSplitter::handle:hover {{
-    background-color: {border_strong};
+    background-color: {ink};
 }}
 
 /* ════════════════ Check Box ════════════════ */
 QCheckBox {{
     color: {text};
     spacing: 8px;
-    font-size: 12px;
+    font-size: 13px;
     background-color: transparent;
 }}
 QCheckBox::indicator {{
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
     border: 1.5px solid {border_strong};
     background-color: {input_bg};
 }}
 QCheckBox::indicator:hover {{
-    border-color: {ink_dim};
+    border-color: {ink};
 }}
 QCheckBox::indicator:checked {{
     background-color: {ink};
@@ -356,47 +383,43 @@ QCheckBox::indicator:checked {{
 /* ════════════════ Scroll Bars ════════════════ */
 QScrollBar:vertical {{
     background: transparent;
-    width: 6px;
+    width: 8px;
     margin: 0;
     border: none;
 }}
 QScrollBar::handle:vertical {{
     background: {scrollbar};
-    min-height: 24px;
-    border-radius: 3px;
+    min-height: 28px;
+    border-radius: 4px;
 }}
 QScrollBar::handle:vertical:hover {{
     background: {border_strong};
 }}
-QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical,
-QScrollBar::add-page:vertical,
-QScrollBar::sub-page:vertical {{
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
     background: none;
     height: 0px;
 }}
 QScrollBar:horizontal {{
     background: transparent;
-    height: 6px;
+    height: 8px;
     border: none;
 }}
 QScrollBar::handle:horizontal {{
     background: {scrollbar};
-    min-width: 24px;
-    border-radius: 3px;
+    min-width: 28px;
+    border-radius: 4px;
 }}
 QScrollBar::handle:horizontal:hover {{
     background: {border_strong};
 }}
-QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal,
-QScrollBar::add-page:horizontal,
-QScrollBar::sub-page:horizontal {{
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {{
     background: none;
     width: 0px;
 }}
 
-/* ════════════════ Labels ════════════════ */
+/* ════════════════ Labels & Typography ════════════════ */
 QLabel {{
     color: {text};
     background-color: transparent;
@@ -404,11 +427,12 @@ QLabel {{
 
 /* Eyebrow label */
 QLabel[class="g-eyebrow"] {{
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 10px;
+    font-family: 'Geist', 'Segoe UI', sans-serif;
+    font-size: 11px;
     font-weight: 700;
     color: {muted};
-    letter-spacing: 1px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
     background-color: transparent;
 }}
 
@@ -416,7 +440,7 @@ QLabel[class="g-eyebrow"] {{
 QFormLayout > QLabel {{
     color: {text};
     font-weight: 500;
-    font-size: 12px;
+    font-size: 13px;
     background-color: transparent;
 }}
 
@@ -425,9 +449,9 @@ QToolTip {{
     background-color: {tooltip_bg};
     color: {tooltip_text};
     border: 1px solid {border_strong};
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 11px;
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
 }}
 
 /* ════════════════ Status Bar ════════════════ */
@@ -435,73 +459,95 @@ QStatusBar {{
     background-color: {surface};
     color: {muted};
     border-top: 1px solid {border};
-    font-size: 11px;
+    font-size: 12px;
 }}
 
 /* ════════════════ Sidebar footer frame ════════════════ */
 QFrame#sidebar_footer {{
     background-color: {hover};
     border: 1px solid {border};
-    border-radius: 6px;
+    border-radius: 8px;
+}}
+
+/* ════════════════ Chat Message Cards ════════════════ */
+QFrame[class="g-chat-user"] {{
+    background-color: {hover};
+    border: 1px solid {border};
+    border-radius: 12px;
+    padding: 12px 16px;
+}}
+
+QFrame[class="g-chat-assistant"] {{
+    background-color: {card};
+    border: 1px solid {border};
+    border-radius: 12px;
+    padding: 14px 18px;
+}}
+
+QFrame[class="g-evidence-card"] {{
+    background-color: {surface};
+    border: 1px solid {border};
+    border-radius: 8px;
+    padding: 10px 14px;
 }}
 """
 
-# ── Light Palette ──────────────────────────────────────────────────────────────
+# ── Light Palette (Clean, Eco-Minimalist Brand Palette) ───────────────────────
 _LIGHT = dict(
-    bg="#f4f4f5",
+    bg="#faf9f5",
     surface="#ffffff",
     card="#ffffff",
-    text="#09090b",
-    muted="#71717a",
-    nav_muted="#52525b",
-    border="#e4e4e7",
-    border_strong="#a1a1aa",
-    hover="#f4f4f5",
-    pressed="#e4e4e7",
-    chip_bg="#f4f4f5",
-    chip_text="#3f3f46",
-    ink="#09090b",
-    ink_text="#ffffff",
-    ink_hover="#27272a",
-    ink_pressed="#3f3f46",
-    ink_dim="#71717a",
+    text="#141413",
+    muted="#788c5d",
+    nav_muted="#52524e",
+    border="#e8e6dc",
+    border_strong="#b0aea5",
+    hover="#f4f3ed",
+    pressed="#e8e6dc",
+    chip_bg="#f4f3ed",
+    chip_text="#141413",
+    ink="#d97757",
+    ink_text="#faf9f5",
+    ink_hover="#c46344",
+    ink_pressed="#b35336",
+    ink_dim="#b0aea5",
     input_bg="#ffffff",
-    scrollbar="#d4d4d8",
-    sel_bg="#dbeafe",
-    sel_text="#1d4ed8",
-    item_sel_bg="#2563eb",
+    scrollbar="#e8e6dc",
+    sel_bg="#e8f0e6",
+    sel_text="#788c5d",
+    item_sel_bg="#d97757",
     item_sel_text="#ffffff",
-    tooltip_bg="#09090b",
-    tooltip_text="#ffffff",
+    tooltip_bg="#141413",
+    tooltip_text="#faf9f5",
 )
 
-# ── Dark Palette ───────────────────────────────────────────────────────────────
+# ── Dark Palette (Editorial Dark Tech Palette) ─────────────────────────────────
 _DARK = dict(
-    bg="#09090b",
-    surface="#141417",
-    card="#18181b",
-    text="#f4f4f5",
-    muted="#a1a1aa",
-    nav_muted="#d4d4d8",
-    border="#27272a",
-    border_strong="#52525b",
-    hover="#27272a",
-    pressed="#3f3f46",
-    chip_bg="#27272a",
-    chip_text="#d4d4d8",
-    ink="#f4f4f5",
-    ink_text="#09090b",
-    ink_hover="#e4e4e7",
-    ink_pressed="#d4d4d8",
-    ink_dim="#a1a1aa",
-    input_bg="#18181b",
-    scrollbar="#3f3f46",
-    sel_bg="#1e3a5f",
-    sel_text="#93c5fd",
-    item_sel_bg="#2563eb",
+    bg="#141413",
+    surface="#1a1a19",
+    card="#1f1f1d",
+    text="#faf9f5",
+    muted="#b0aea5",
+    nav_muted="#e8e6dc",
+    border="#2e2e2b",
+    border_strong="#b0aea5",
+    hover="#2b2b28",
+    pressed="#383834",
+    chip_bg="#2b2b28",
+    chip_text="#faf9f5",
+    ink="#d97757",
+    ink_text="#faf9f5",
+    ink_hover="#c46344",
+    ink_pressed="#b35336",
+    ink_dim="#b0aea5",
+    input_bg="#1f1f1d",
+    scrollbar="#2e2e2b",
+    sel_bg="#2a3828",
+    sel_text="#788c5d",
+    item_sel_bg="#d97757",
     item_sel_text="#ffffff",
-    tooltip_bg="#f4f4f5",
-    tooltip_text="#09090b",
+    tooltip_bg="#faf9f5",
+    tooltip_text="#141413",
 )
 
 GEIST_LIGHT_QSS: str = _BASE.format(**_LIGHT)

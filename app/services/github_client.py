@@ -80,19 +80,43 @@ class GitHubClient:
     def fetch_repository_data(self, owner: str, repo: str) -> Dict[str, Any]:
         """Fetches repository metadata and files using Zipball with REST API fallback."""
         url = f"https://api.github.com/repos/{owner}/{repo}"
-        try:
-            resp = requests.get(url, headers=self.headers, timeout=12)
-        except requests.RequestException as e:
-            raise ValueError(f"Network error connecting to GitHub: {str(e)}")
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            try:
+                resp = requests.get(url, headers=self.headers, timeout=12)
+            except requests.RequestException as e:
+                raise ValueError(f"Network error connecting to GitHub: {str(e)}")
 
-        if resp.status_code == 404:
-            raise ValueError(f"Repository '{owner}/{repo}' not found on GitHub. Check owner and repository name.")
-        elif resp.status_code == 401:
-            raise ValueError("GitHub API 401 Unauthorized. Check your GitHub Token in Settings.")
-        elif resp.status_code == 403:
-            raise ValueError("GitHub API rate limit exceeded. Add a GitHub Personal Access Token in Settings.")
-        elif resp.status_code != 200:
-            raise ValueError(f"GitHub API returned error HTTP {resp.status_code}: {resp.text[:200]}")
+            if resp.status_code == 200:
+                break
+            elif resp.status_code in (403, 429):
+                reset_header = resp.headers.get("X-RateLimit-Reset")
+                remaining = resp.headers.get("X-RateLimit-Remaining", "0")
+                if remaining == "0" or "rate limit" in resp.text.lower():
+                    wait_str = ""
+                    if reset_header:
+                        try:
+                            import time
+                            reset_ts = int(reset_header)
+                            now_ts = int(time.time())
+                            mins = max(1, (reset_ts - now_ts) // 60)
+                            wait_str = f" Reset in ~{mins} minutes."
+                        except Exception:
+                            pass
+                    raise ValueError(
+                        f"GitHub API rate limit reached.{wait_str} "
+                        f"Add a GitHub Personal Access Token in Settings to raise your limit to 5,000 requests/hr."
+                    )
+                elif attempt < max_retries:
+                    import time
+                    time.sleep(1.5 * (attempt + 1))
+                    continue
+            elif resp.status_code == 404:
+                raise ValueError(f"Repository '{owner}/{repo}' not found on GitHub. Check owner and repository name.")
+            elif resp.status_code == 401:
+                raise ValueError("GitHub API 401 Unauthorized. Check your GitHub Token in Settings.")
+            else:
+                raise ValueError(f"GitHub API returned HTTP {resp.status_code}")
 
         meta = resp.json()
         primary_lang = meta.get("language") or "Unknown"

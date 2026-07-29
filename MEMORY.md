@@ -104,5 +104,41 @@ Git Reverse is a native desktop intelligence platform that ingests GitHub reposi
     - Added `⏳ Testing connection...` interim status badge on click in `settings_view.py`.
     - Replaced silent `except Exception: pass` swallow blocks in `analyzer.py` with `logging.warning()` trace outputs.
     - Added informative empty state cards and guidance across `kb_view.py` and `chat_view.py`.
+  - **Analyze View & KB Chat System Prompt Refinement**:
+    - Removed `Target:` mode dropdown from `AnalyzeView` top command bar in `analyze_view.py`, defaulting prompt generation to `"Clone Prompt"`.
+    - Retained `Mode:` selector in `KB Chat Console` (`chat_view.py`) with 5 dedicated AI mode system prompts (`General`, `Explain`, `Architect`, `Developer`, `Documentation`) in `llm_client.py`.
+    - Integrated Mode System Prompt + Active Repository Metadata + FTS5 Raw Code Evidence Line Numbers + Chat History + User Query into a unified context payload sent to the LLM.
+  - **GUI Cleanup**:
+    - Removed PRD section reference tags (`(§59)`, `(§62)`, `(§64)`, `(§65)`) from user-facing GUI tabs, group box titles, and labels across `kb_view.py`, `settings_view.py`, and `analyze_view.py`.
+  - **Spending Protection Enforcement**:
+    - Integrated real-time daily/monthly spending limit checks (`daily_spend_limit_usd`, `monthly_spend_limit_usd`) and policy actions (`warn`/`block`) in `ChatView.on_send_clicked()` in `chat_view.py`.
+    - Automatically persists completed token counts and estimated costs to `SpendingLog` via `DatabaseManager.log_token_usage()` upon streaming chat completion.
+  - **Brand Guidelines & Watermark Integration**:
+    - Integrated brand identity guidelines (`brand-guidelines` skill): Primary Dark `#141413`, Light `#faf9f5`, Accent Orange `#d97757`, Secondary Blue `#6a9bcc`, Tertiary Green `#788c5d`.
+    - Applied a clean, simple, eco-friendly palette across `styles.py` QSS (warm `#faf9f5` canvas, `#141413` primary typography, `#d97757` terracotta accent buttons, and `#788c5d` eco-green highlights).
+    - Added official brand watermark header/footer to Markdown prompt exports and diagonal semi-transparent watermark stamp (`GIT REVERSE • OFFICIAL BRAND ARTIFACT`) to PDF/HTML exports in `exporter.py`.
+    - Updated sidebar footer badge in `main_window.py` to display `Git Reverse Intelligence System — Official Brand Release · v1.1.0`.
+  - **UI/UX Smooth Transition Effects**:
+    - Implemented subtle 150ms opacity fade-in transition (`_animate_stack_transition`) in `main_window.py` for workspace view switching in `QStackedWidget`.
+    - Applied smooth transitions across navigation actions to ensure deliberate, non-flickering UI/UX ergonomics.
+  - **Official Logo & Icon Integration**:
+    - Integrated brand logo assets from `.agents/skills/favicon (1)` across the desktop application (`main.py` & `main_window.py`).
+    - Added high-resolution brand logo image to the titlebar header next to application title.
+    - Set application-wide taskbar/window icon (`QIcon("favicon.ico")`) and configured PyInstaller executable spec (`git_reverse.spec`) to bundle `.agents` assets and set executable icon.
   - **Automated Verification**:
     - 11/11 unit & service tests passing in `pytest` (`test_backend.py`).
+
+## Enterprise-Grade Architecture & Reliability Guidelines
+1. **Thread Safety & Signal Gating**:
+   - `ChatWorker` uses generation-ID signal gating (`self._worker_generation`) to ignore stale signals from cancelled or delayed workers.
+   - Timed-out thread cleanup invokes `.terminate()` after 1000ms if network I/O blocks graceful exit, preventing UI freezes or interleaved tokens.
+2. **Evidence Quality & Ground Truth**:
+   - `analyzer.py` extracts line-level AST symbols (`lineno` for Python, line counts from regex offsets for JS/TS/Rust/Go/C#).
+   - FTS5 retrieval matches query terms against raw AST symbol lines (`file.py L42`), feeding ground-truth line evidence directly into LLM prompts.
+3. **Polyglot Dependency Intelligence**:
+   - Per-dependency name and version extraction across `package.json` (JS/TS), `Cargo.toml` (Rust), `requirements.txt` (Python), and `go.mod` (Go).
+4. **Exception & Diagnostics Discipline**:
+   - Zero silent exception swallowing (`except Exception: pass`). All parse errors log diagnostic context (`logging.warning`) and report error counts to Health Center diagnostics.
+5. **Vercel Geist GUI Ergonomics**:
+   - Clean user-facing text free of raw section tags (`(§59)`).
+   - Minimum 400ms display timer for thinking progress bar to prevent visual flicker during fast local FTS lookups.

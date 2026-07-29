@@ -16,9 +16,15 @@ class _HealthWorker(QThread):
     result = Signal(dict)
 
     def run(self):
-        db_path = get_db_filepath()
-        report = run_full_health_check(db_path)
-        self.result.emit(report)
+        try:
+            db_path = get_db_filepath()
+            report = run_full_health_check(db_path)
+            self.result.emit(report)
+        except Exception as e:
+            self.result.emit({
+                "overall": "error",
+                "database": {"status": "error", "message": f"Health check failed: {str(e)}"},
+            })
 
 
 def _status_badge(status: str) -> str:

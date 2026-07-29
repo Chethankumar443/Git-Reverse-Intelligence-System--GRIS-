@@ -157,6 +157,12 @@ class ChatView(QWidget):
         top_layout.addWidget(btn_clear)
         layout.addWidget(top_bar)
 
+        # Async State Contract Widget for Chat Operations
+        from app.views.components import AsyncStateWidget
+        self.state_widget = AsyncStateWidget()
+        self.state_widget.retry_requested.connect(self.on_retry_clicked)
+        layout.addWidget(self.state_widget)
+
         # ── AI Thinking State Indicator Bar (§37–39) ───────────────────────
         self.thinking_bar = QFrame()
         self.thinking_bar.setStyleSheet(
@@ -338,6 +344,30 @@ class ChatView(QWidget):
                 f"\n[System Warning] Input token estimate (~{est_tokens} tokens) exceeds standard context limit guardrail (8,000 tokens)."
             )
 
+        # Spending Protection Check (§64)
+        daily_limit = float(config.get("daily_spend_limit_usd", 0.0) or 0.0)
+        monthly_limit = float(config.get("monthly_spend_limit_usd", 0.0) or 0.0)
+        limit_action = config.get("spend_limit_action", "warn")
+
+        if daily_limit > 0 or monthly_limit > 0:
+            summary = self.db_mgr.get_spending_summary()
+            today_cost = summary.get("today_cost_usd", 0.0)
+            month_cost = summary.get("month_cost_usd", 0.0)
+
+            exceeded = []
+            if daily_limit > 0 and today_cost >= daily_limit:
+                exceeded.append(f"Daily limit (${today_cost:.2f} / ${daily_limit:.2f})")
+            if monthly_limit > 0 and month_cost >= monthly_limit:
+                exceeded.append(f"Monthly limit (${month_cost:.2f} / ${monthly_limit:.2f})")
+
+            if exceeded:
+                msg = f"\n[Spending Protection] " + ", ".join(exceeded) + " reached."
+                if limit_action == "block":
+                    self.chat_stream.appendPlainText(msg + " Block action enabled — new LLM queries are blocked.\n")
+                    return
+                else:
+                    self.chat_stream.appendPlainText(msg + " Warning action enabled.\n")
+
         self.input_edit.clear()
         self.btn_send.setEnabled(False)
         self.btn_send.setText("…")
@@ -368,7 +398,11 @@ class ChatView(QWidget):
         base_url = config.get("base_url", "https://api.openai.com/v1")
         model_id = config.get("model_id", "gpt-4o").replace("[FREE] ", "")
 
-        system_ctx = CHAT_SYSTEM_CONTEXT
+        ai_mode_str = self._ai_mode_combo.currentText()
+        from app.services.llm_client import AI_MODES
+        base_system_prompt = AI_MODES.get(ai_mode_str, AI_MODES["General"])
+
+        system_ctx = base_system_prompt
         if self._active_session:
             system_ctx += (
                 f"\n\nACTIVE REPOSITORY CONTEXT:\n"
@@ -400,6 +434,7 @@ class ChatView(QWidget):
             session_id=session_id,
             parent=self,
         )
+        self.state_widget.set_loading("Searching FTS5 evidence index & generating response...")
         self._worker.thinking_step.connect(self.on_thinking_step)
         self._worker.token_received.connect(self.on_chat_token)
         self._worker.finished.connect(self.on_chat_done)
@@ -410,6 +445,7 @@ class ChatView(QWidget):
         if gen_id != self._current_gen_id:
             return
         self.lbl_thinking.setText(f"AI Thinking State: {step_msg}")
+        self.state_widget.set_loading(step_msg)
 
     def on_chat_token(self, gen_id: int, token: str):
         if gen_id != self._current_gen_id:
@@ -426,10 +462,16 @@ class ChatView(QWidget):
         self.btn_send.setEnabled(True)
         self.btn_send.setText("Send")
         self._hide_thinking_bar()
+        self.state_widget.set_success("Response complete")
         self.chat_stream.appendPlainText("\n")
         if self._current_response_buffer:
             self._history.append({"role": "assistant", "content": self._current_response_buffer})
             self._current_response_buffer = ""
+
+        # Log token usage to SQLite SpendingLog
+        if token_count > 0:
+            est_cost = round((token_count / 1000.0) * 0.002, 6)
+            self.db_mgr.log_token_usage(tokens=token_count, estimated_cost_usd=est_cost)
 
     def on_chat_failed(self, gen_id: int, err: str):
         if gen_id != self._current_gen_id:
@@ -438,4 +480,5 @@ class ChatView(QWidget):
         self.btn_send.setText("Send")
         self.btn_retry.show()
         self._hide_thinking_bar()
+        self.state_widget.set_error(err)
         self.chat_stream.appendPlainText(f"\n[Error: {err}]\n")

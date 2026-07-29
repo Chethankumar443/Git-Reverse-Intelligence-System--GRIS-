@@ -260,3 +260,14 @@ def test_llm_client_stream_chat(monkeypatch):
     assert "".join(chunks) == "Hello world!"
     assert received_tokens == 2
 
+
+def test_desktop_shortcut():
+    from app.services.shortcut import create_desktop_shortcut
+    ok = create_desktop_shortcut("Git Reverse Test Shortcut")
+    desktop_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+    shortcut_file = os.path.join(desktop_dir, "Git Reverse Test Shortcut.lnk")
+    if ok:
+        assert os.path.exists(shortcut_file)
+        os.remove(shortcut_file)
+
+

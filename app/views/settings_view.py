@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (
     QListWidget, QListWidgetItem, QFrame, QScrollArea, QAbstractItemView,
     QSizePolicy, QApplication
 )
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt, Signal, QTimer, QUrl
+from PySide6.QtGui import QColor, QDesktopServices
 from app.viewmodels.settings_vm import SettingsViewModel
 
 
@@ -54,6 +54,11 @@ class SettingsView(QWidget):
         sub.setStyleSheet("font-size: 11px;")
         layout.addWidget(sub)
 
+        # Async State Widget for Settings operations
+        from app.views.components import AsyncStateWidget
+        self.state_widget = AsyncStateWidget()
+        layout.addWidget(self.state_widget)
+
         # ── Section 1: API Key & Keyring Store ───────────────────────────────
         grp_key = QGroupBox("OS Credential Store & Key Detection (Windows Keyring)")
         key_layout = QVBoxLayout(grp_key)
@@ -93,6 +98,49 @@ class SettingsView(QWidget):
         )
         self.lbl_key_status.setWordWrap(True)
         key_layout.addWidget(self.lbl_key_status)
+
+        # ── GitHub PAT Setup Callout Card ───────────────────────────────
+        gh_info_card = QFrame()
+        gh_info_card.setStyleSheet(
+            "QFrame { background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; }"
+        )
+        gh_card_layout = QVBoxLayout(gh_info_card)
+        gh_card_layout.setContentsMargins(12, 10, 12, 10)
+        gh_card_layout.setSpacing(8)
+
+        gh_card_header = QHBoxLayout()
+        gh_card_title = QLabel("🔑 GitHub Personal Access Token (PAT) Setup Guide")
+        gh_card_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2563eb;")
+        
+        btn_open_gh = QPushButton("Open GitHub Token Settings ↗")
+        btn_open_gh.setProperty("class", "g-btn-ghost")
+        btn_open_gh.setFixedHeight(28)
+        btn_open_gh.setStyleSheet("font-size: 11px; font-weight: 600; color: #2563eb; padding: 2px 10px;")
+        btn_open_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/settings/tokens")))
+        
+        gh_card_header.addWidget(gh_card_title)
+        gh_card_header.addStretch()
+        gh_card_header.addWidget(btn_open_gh)
+        gh_card_layout.addLayout(gh_card_header)
+
+        gh_instructions = QLabel(
+            "Follow these steps to generate a Personal Access Token (PAT) and raise your GitHub API limit to 5,000 requests/hr:<br>"
+            "<ol style='margin: 4px 0 0 16px; padding: 0; font-size: 11px; color: #52525b; line-height: 1.5;'>"
+            "<li>Click <b>Open GitHub Token Settings ↗</b> above (or navigate to <a href='https://github.com/settings/tokens' style='color:#2563eb;'>github.com/settings/tokens</a>).</li>"
+            "<li>Click <b>Generate new token (classic)</b>.</li>"
+            "<li><b>Note:</b> Enter <code>Git Reverse Desktop</code>.</li>"
+            "<li><b>Expiration:</b> Select <code>90 days</code> (or <code>No expiration</code>).</li>"
+            "<li><b>Scopes:</b> Check <b><code>repo</code></b> (or <b><code>public_repo</code></b> if only analyzing public repositories).</li>"
+            "<li>Click <b>Generate token</b> at the bottom of the page.</li>"
+            "<li>Copy the generated token starting with <code>ghp_...</code>, paste it into the field below, and click <b>Save Token</b>.</li>"
+            "</ol>"
+        )
+        gh_instructions.setTextFormat(Qt.RichText)
+        gh_instructions.setOpenExternalLinks(True)
+        gh_instructions.setWordWrap(True)
+        gh_card_layout.addWidget(gh_instructions)
+
+        key_layout.addWidget(gh_info_card)
 
         # GitHub token row
         gh_row = QHBoxLayout()
@@ -234,6 +282,19 @@ class SettingsView(QWidget):
         dir_row.addWidget(self.btn_browse)
         app_layout.addLayout(dir_row)
 
+        shortcut_row = QHBoxLayout()
+        shortcut_lbl = QLabel("Desktop Shortcut:")
+        shortcut_lbl.setStyleSheet("font-size: 12px; font-weight: 500;")
+        shortcut_lbl.setFixedWidth(120)
+        self.btn_create_shortcut = QPushButton("Create Desktop Shortcut")
+        self.btn_create_shortcut.setProperty("class", "g-btn-ghost")
+        self.btn_create_shortcut.setFixedHeight(34)
+        self.btn_create_shortcut.clicked.connect(self._on_create_shortcut_clicked)
+        shortcut_row.addWidget(shortcut_lbl)
+        shortcut_row.addWidget(self.btn_create_shortcut)
+        shortcut_row.addStretch()
+        app_layout.addLayout(shortcut_row)
+
         layout.addWidget(grp_app)
 
         # Save Button
@@ -247,8 +308,8 @@ class SettingsView(QWidget):
         save_row.addWidget(self.btn_save)
         layout.addLayout(save_row)
 
-        # ── §64 Spending Protection ───────────────────────────────────────────
-        grp_spend = QGroupBox("Spending Protection (§64)")
+        # ── Spending Protection ───────────────────────────────────────────
+        grp_spend = QGroupBox("Spending Protection")
         spend_layout = QFormLayout(grp_spend)
         spend_layout.setSpacing(8)
 
@@ -284,8 +345,8 @@ class SettingsView(QWidget):
 
         layout.addWidget(grp_spend)
 
-        # ── §65 Backup & Restore ──────────────────────────────────────────────
-        grp_backup = QGroupBox("Backup & Restore (§65)")
+        # ── Backup & Restore ──────────────────────────────────────────────
+        grp_backup = QGroupBox("Backup & Restore")
         backup_layout = QHBoxLayout(grp_backup)
         backup_layout.setSpacing(8)
 
@@ -448,6 +509,7 @@ class SettingsView(QWidget):
             "font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; "
             "background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047;"
         )
+        self.state_widget.set_loading(msg)
 
     def _set_status_connected(self, msg: str):
         self.lbl_key_status.setText(f"✓  {msg}")
@@ -455,6 +517,7 @@ class SettingsView(QWidget):
             "font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; "
             "background-color: #dcfce7; color: #166534; border: 1px solid #86efac;"
         )
+        self.state_widget.set_success(msg)
 
     def _set_status_error(self, msg: str):
         self.lbl_key_status.setText(f"✗  {msg}")
@@ -462,6 +525,7 @@ class SettingsView(QWidget):
             "font-size: 11px; font-weight: 600; padding: 6px 12px; border-radius: 6px; "
             "background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;"
         )
+        self.state_widget.set_error(msg)
 
     # ──────────────────────────────────────────────────────────────────────────
     # Permanent Model Selection & Auto-Save
@@ -524,6 +588,7 @@ class SettingsView(QWidget):
         if not token:
             return
         self.vm.save_github_token(token)
+        self.state_widget.set_success("GitHub Access Token saved to Keyring.")
         QMessageBox.information(self, "Saved", "GitHub Access Token saved to Keyring.")
         self.gh_token_input.clear()
         self.gh_token_input.setPlaceholderText("GitHub Token: Saved in Keyring  ghp_…")
@@ -557,21 +622,37 @@ class SettingsView(QWidget):
             self.export_dir_input.setText(d)
 
     def on_save_config_clicked(self):
+        base_url = self.base_url_input.text().strip()
+        if not (base_url.startswith("http://") or base_url.startswith("https://")):
+            self.state_widget.set_error("Invalid Base URL", override_msg="Base URL must start with http:// or https://")
+            return
+
+        daily_txt = self.daily_limit_input.text().strip() or "0"
+        monthly_txt = self.monthly_limit_input.text().strip() or "0"
+
+        try:
+            daily_limit = float(daily_txt)
+            if daily_limit < 0:
+                raise ValueError("Daily limit cannot be negative.")
+        except ValueError as e:
+            self.state_widget.set_error("Invalid Daily Limit", override_msg=f"Daily spend limit is invalid: {str(e)}")
+            return
+
+        try:
+            monthly_limit = float(monthly_txt)
+            if monthly_limit < 0:
+                raise ValueError("Monthly limit cannot be negative.")
+        except ValueError as e:
+            self.state_widget.set_error("Invalid Monthly Limit", override_msg=f"Monthly spend limit is invalid: {str(e)}")
+            return
+
         item = self.model_list.currentItem()
         model_id = item.data(Qt.UserRole) if item else self.vm.config.get("model_id", "gpt-4o")
         clean_model = model_id.replace("[FREE] ", "").strip()
-        try:
-            daily_limit = float(self.daily_limit_input.text().strip() or 0)
-        except ValueError:
-            daily_limit = 0.0
-        try:
-            monthly_limit = float(self.monthly_limit_input.text().strip() or 0)
-        except ValueError:
-            monthly_limit = 0.0
 
         new_config = {
             "provider_preset": self.combo_preset.currentText(),
-            "base_url": self.base_url_input.text().strip(),
+            "base_url": base_url,
             "model_id": clean_model,
             "theme": self.combo_theme.currentText(),
             "export_dir": self.export_dir_input.text().strip(),
@@ -582,7 +663,7 @@ class SettingsView(QWidget):
         }
         self.vm.update_config(new_config)
         self.lbl_active_model.setText(f"Active Model: {clean_model}")
-        QMessageBox.information(self, "Saved", f"Preferences saved.\nActive Model: {clean_model}")
+        self.state_widget.set_success(f"Preferences saved. Active Model: {clean_model}")
 
     def _refresh_spending_summary(self):
         """Display spending totals from DatabaseManager (§64)."""
@@ -607,14 +688,15 @@ class SettingsView(QWidget):
         )
         if not path:
             return
+        self.state_widget.set_loading("Exporting database sessions backup...")
         try:
             db = DatabaseManager()
             data = db.export_all_sessions_json()
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, default=str)
-            QMessageBox.information(self, "Backup Exported", f"Backup saved to:\n{path}")
+            self.state_widget.set_success(f"Backup successfully exported to: {path}")
         except Exception as e:
-            QMessageBox.critical(self, "Export Failed", str(e))
+            self.state_widget.set_error(e, override_msg=f"Backup export failed: {str(e)}")
 
     def _on_import_backup(self):
         """Import sessions from a JSON backup file (§65)."""
@@ -630,6 +712,19 @@ class SettingsView(QWidget):
                 data = json.load(f)
             db = DatabaseManager()
             count = db.import_sessions_from_json(data)
-            QMessageBox.information(self, "Import Complete", f"Imported {count} session(s).")
+            self.state_widget.set_success(f"Backup import complete! Imported {count} session(s).")
         except Exception as e:
-            QMessageBox.critical(self, "Import Failed", str(e))
+            self.state_widget.set_error(e, override_msg=f"Backup import failed: {str(e)}")
+
+    def _on_create_shortcut_clicked(self):
+        """Create or recreate the Desktop shortcut (.lnk)."""
+        from app.services.shortcut import create_desktop_shortcut
+        ok = create_desktop_shortcut("Git Reverse")
+        if ok:
+            QMessageBox.information(
+                self, "Shortcut Created", "Git Reverse Desktop shortcut was successfully created on your Desktop."
+            )
+        else:
+            QMessageBox.warning(
+                self, "Shortcut Failed", "Could not create Desktop shortcut. Check your user permissions."
+            )

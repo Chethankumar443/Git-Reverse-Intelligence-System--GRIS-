@@ -70,6 +70,11 @@ class KnowledgeBaseView(QWidget):
 
         layout.addWidget(top_bar)
 
+        # Reusable Async State Contract Widget for Export & Refresh operations
+        from app.views.components import AsyncStateWidget
+        self.state_widget = AsyncStateWidget()
+        layout.addWidget(self.state_widget)
+
         # Main Splitter
         splitter = QSplitter(Qt.Horizontal)
 
@@ -136,7 +141,7 @@ class KnowledgeBaseView(QWidget):
         self.license_report_edit.setReadOnly(True)
         self.license_report_edit.setPlaceholderText("License compliance breakdown will load here...")
         self.license_report_edit.setStyleSheet("font-family: 'Geist Mono', monospace; font-size: 12px; line-height: 1.5;")
-        self.tabs.addTab(self.license_report_edit, "License Report (§62)")
+        self.tabs.addTab(self.license_report_edit, "License Report")
 
         right_layout.addWidget(self.tabs, 1)
 
@@ -254,6 +259,7 @@ class KnowledgeBaseView(QWidget):
             self, "Export Markdown Prompt", os.path.expanduser("~/Documents/prompt.md"), "Markdown Files (*.md)"
         )
         if filepath:
+            self.state_widget.set_loading(f"Exporting prompt to Markdown file...")
             self.vm.export_session_markdown(filepath)
 
     def on_export_pdf_clicked(self):
@@ -261,10 +267,11 @@ class KnowledgeBaseView(QWidget):
             self, "Export PDF Prompt", os.path.expanduser("~/Documents/prompt.pdf"), "PDF Files (*.pdf);;HTML Files (*.html)"
         )
         if filepath:
+            self.state_widget.set_loading(f"Exporting prompt to PDF document...")
             self.vm.export_session_pdf(filepath)
 
     def on_export_finished(self, success: bool, msg: str):
         if success:
-            QMessageBox.information(self, "Export Successful", msg)
+            self.state_widget.set_success(msg)
         else:
-            QMessageBox.warning(self, "Export Failed", msg)
+            self.state_widget.set_error(msg)

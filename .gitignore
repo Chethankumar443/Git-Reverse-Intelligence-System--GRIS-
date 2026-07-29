@@ -8,3 +8,13 @@ dist/
 .pytest_cache/
 *.db
 *.sqlite
+design_base64.txt
+
+# Node / Web Workspace
+node_modules/
+workspace/web/node_modules/
+workspace/web/dist/
+workspace/api/*.db
+workspace/api/*.sqlite
+.env
+.env.local
