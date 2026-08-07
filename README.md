@@ -14,7 +14,7 @@ Local-first · Evidence-backed · Streaming terminal UI
 
 [![PyPI version](https://img.shields.io/pypi/v/gitreverse?color=58a6ff&labelColor=0d1117)](https://pypi.org/project/gitreverse/)
 [![Python ≥ 3.11](https://img.shields.io/badge/python-%E2%89%A53.11-58a6ff?labelColor=0d1117)](https://www.python.org/downloads/)
-[![CI](https://img.shields.io/github/actions/workflow/status/chethankumar443/git-reverse/ci.yml?branch=main&label=CI&labelColor=0d1117)](https://github.com/chethankumar443/git-reverse/actions)
+[![CI](https://img.shields.io/github/actions/workflow/status/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-/ci.yml?branch=main&label=CI&labelColor=0d1117)](https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-/actions)
 [![Licence: MIT](https://img.shields.io/badge/licence-MIT-2ea043?labelColor=0d1117)](LICENSE)
 
 </div>
@@ -65,15 +65,15 @@ gitreverse
 ### From source
 
 ```bash
-git clone https://github.com/chethankumar443/git-reverse
-cd git-reverse
+git clone https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-.git
+cd Git-Reverse-Intelligence-System--GRIS-
 pip install -e .
 gitreverse
 ```
 
 ### Standalone binary (no Python needed)
 
-Download the pre-built binary for your platform from the [Releases page](https://github.com/chethankumar443/git-reverse/releases/latest).
+Download the pre-built binary for your platform from the [Releases page](https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-/releases/latest).
 
 | Platform | File |
 |----------|------|

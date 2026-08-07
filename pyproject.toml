@@ -43,10 +43,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/chethankumar443/git-reverse"
-Repository = "https://github.com/chethankumar443/git-reverse"
-Changelog = "https://github.com/chethankumar443/git-reverse/blob/main/CHANGELOG.md"
-"Bug Tracker" = "https://github.com/chethankumar443/git-reverse/issues"
+Homepage = "https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-"
+Repository = "https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-"
+Changelog = "https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/Chethankumar443/Git-Reverse-Intelligence-System--GRIS-/issues"
 
 [project.scripts]
 gitreverse = "gitreverse.cli.app:main"

@@ -29,6 +29,7 @@ from gitreverse.cli.setup import (
     OPENROUTER_SIGNUP_URL,
 )
 from gitreverse.utils.logging import setup_logging, get_logger
+from gitreverse.utils.shortcut import create_desktop_shortcut
 
 logger = get_logger("cli.app")
 
@@ -651,6 +652,10 @@ class GitReverseApp(App):
     def _finish_setup(self) -> None:
         self.config = complete_setup(self._setup_username, self._setup_api_key, self.config.llm.model)
         self.llm = LLMClient(api_key=self.config.llm.api_key, model=self.config.llm.model)
+        try:
+            create_desktop_shortcut()
+        except Exception as e:
+            logger.warning(f"Failed to create desktop shortcut automatically: {e}")
         try:
             self.query_one("#setup-screen").remove()
         except Exception:
@@ -1366,9 +1371,21 @@ def main() -> None:
         action="store_true",
         help="Reset all saved configuration and re-run the setup wizard",
     )
+    parser.add_argument(
+        "--create-shortcut",
+        action="store_true",
+        help="Create a desktop shortcut to launch Git Reverse",
+    )
     args = parser.parse_args()
 
     setup_logging()
+
+    if args.create_shortcut:
+        if create_desktop_shortcut():
+            print("Desktop shortcut created successfully.")
+        else:
+            print("Failed to create desktop shortcut.")
+        return
 
     if args.reset_setup:
         config = load_config()
