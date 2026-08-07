@@ -13,13 +13,13 @@ class AnalysisProgressPanel(Widget):
         padding: 0 1;
     }
     AnalysisProgressPanel .stage-label {
-        color: $text-muted;
+        color: #8b949e;
     }
     AnalysisProgressPanel .stage-active {
-        color: $accent;
+        color: #58a6ff;
     }
     AnalysisProgressPanel .stage-complete {
-        color: $success;
+        color: #2ea043;
     }
     """
 

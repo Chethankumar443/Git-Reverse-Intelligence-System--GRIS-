@@ -1,0 +1,56 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.pyd
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# ── Distribution / Packaging ──────────────────────────────────────────────────
+*.tar.gz
+*.whl
+MANIFEST
+
+# ── PyInstaller ───────────────────────────────────────────────────────────────
+*.spec
+dist/
+build/
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ── Linting / Type checking ───────────────────────────────────────────────────
+.ruff_cache/
+.mypy_cache/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Git Reverse runtime data ──────────────────────────────────────────────────
+# These are generated at runtime and should NOT be committed
+test_clone/
+gitreverse.egg-info/
+
+# ── Dev tooling ───────────────────────────────────────────────────────────────
+.mimocode/
+.specify/
