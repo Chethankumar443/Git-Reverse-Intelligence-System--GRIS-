@@ -101,39 +101,39 @@ class SettingsView(QWidget):
 
         # ── GitHub PAT Setup Callout Card ───────────────────────────────
         gh_info_card = QFrame()
-        gh_info_card.setStyleSheet(
-            "QFrame { background: rgba(37, 99, 235, 0.05); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 8px; }"
-        )
+        gh_info_card.setProperty("class", "g-info-card")
         gh_card_layout = QVBoxLayout(gh_info_card)
-        gh_card_layout.setContentsMargins(12, 10, 12, 10)
-        gh_card_layout.setSpacing(8)
+        gh_card_layout.setContentsMargins(16, 14, 16, 14)
+        gh_card_layout.setSpacing(10)
 
         gh_card_header = QHBoxLayout()
         gh_card_title = QLabel("🔑 GitHub Personal Access Token (PAT) Setup Guide")
-        gh_card_title.setStyleSheet("font-size: 12px; font-weight: 700; color: #2563eb;")
-        
+        gh_card_title.setStyleSheet("font-size: 13px; font-weight: 700;")
+
         btn_open_gh = QPushButton("Open GitHub Token Settings ↗")
         btn_open_gh.setProperty("class", "g-btn-ghost")
-        btn_open_gh.setFixedHeight(28)
-        btn_open_gh.setStyleSheet("font-size: 11px; font-weight: 600; color: #2563eb; padding: 2px 10px;")
+        btn_open_gh.setCursor(Qt.PointingHandCursor)
+        btn_open_gh.setFixedHeight(30)
         btn_open_gh.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/settings/tokens")))
-        
+
         gh_card_header.addWidget(gh_card_title)
         gh_card_header.addStretch()
         gh_card_header.addWidget(btn_open_gh)
         gh_card_layout.addLayout(gh_card_header)
 
         gh_instructions = QLabel(
-            "Follow these steps to generate a Personal Access Token (PAT) and raise your GitHub API limit to 5,000 requests/hr:<br>"
-            "<ol style='margin: 4px 0 0 16px; padding: 0; font-size: 11px; color: #52525b; line-height: 1.5;'>"
-            "<li>Click <b>Open GitHub Token Settings ↗</b> above (or navigate to <a href='https://github.com/settings/tokens' style='color:#2563eb;'>github.com/settings/tokens</a>).</li>"
-            "<li>Click <b>Generate new token (classic)</b>.</li>"
-            "<li><b>Note:</b> Enter <code>Git Reverse Desktop</code>.</li>"
-            "<li><b>Expiration:</b> Select <code>90 days</code> (or <code>No expiration</code>).</li>"
-            "<li><b>Scopes:</b> Check <b><code>repo</code></b> (or <b><code>public_repo</code></b> if only analyzing public repositories).</li>"
-            "<li>Click <b>Generate token</b> at the bottom of the page.</li>"
-            "<li>Copy the generated token starting with <code>ghp_...</code>, paste it into the field below, and click <b>Save Token</b>.</li>"
+            "<div style='font-size: 12px; line-height: 1.6;'>"
+            "Follow these steps to generate a Personal Access Token (PAT) and raise your GitHub API limit to 5,000 requests/hr:"
+            "<ol style='margin: 8px 0 0 18px; padding: 0;'>"
+            "<li style='margin-bottom: 4px;'>Click <b>Open GitHub Token Settings ↗</b> above (or navigate to <a href='https://github.com/settings/tokens'>github.com/settings/tokens</a>).</li>"
+            "<li style='margin-bottom: 4px;'>Click <b>Generate new token (classic)</b>.</li>"
+            "<li style='margin-bottom: 4px;'><b>Note:</b> Enter <b>Git Reverse Desktop</b>.</li>"
+            "<li style='margin-bottom: 4px;'><b>Expiration:</b> Select <b>90 days</b> (or <b>No expiration</b>).</li>"
+            "<li style='margin-bottom: 4px;'><b>Scopes:</b> Check <b>repo</b> (or <b>public_repo</b> for public repositories only).</li>"
+            "<li style='margin-bottom: 4px;'>Click <b>Generate token</b> at the bottom of the page.</li>"
+            "<li style='margin-bottom: 2px;'>Copy the generated token starting with <b>ghp_...</b>, paste it into the field below, and click <b>Save Token</b>.</li>"
             "</ol>"
+            "</div>"
         )
         gh_instructions.setTextFormat(Qt.RichText)
         gh_instructions.setOpenExternalLinks(True)

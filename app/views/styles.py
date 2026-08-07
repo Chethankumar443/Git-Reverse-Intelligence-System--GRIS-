@@ -6,7 +6,7 @@ _BASE = """
 QWidget {{
     color: {text};
     background-color: {bg};
-    font-family: 'Geist', 'Outfit', 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Geist", sans-serif;
     font-size: 13px;
     border: none;
     outline: none;
@@ -19,6 +19,17 @@ QMainWindow {{
 QDialog {{
     background-color: {bg};
     color: {text};
+}}
+
+/* ════════════════ Info Callout Cards ════════════════ */
+QFrame[class="g-info-card"] {{
+    background-color: {card};
+    border: 1px solid {border};
+    border-radius: 10px;
+    padding: 16px;
+}}
+QFrame[class="g-info-card"]:hover {{
+    border-color: {border_strong};
 }}
 
 /* ════════════════ Title Header Bar ════════════════ */
