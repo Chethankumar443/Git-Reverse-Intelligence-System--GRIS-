@@ -16,6 +16,7 @@ from app.views.health_view import HealthView
 from app.views.repo_library_view import RepoLibraryView
 from app.views.styles import GEIST_LIGHT_QSS, GEIST_DARK_QSS
 from app.services.secrets import SecretsManager
+from app._version import __version__
 
 
 class AcceptableUseDialog(QDialog):
@@ -169,7 +170,7 @@ class MainWindow(QMainWindow):
         self.lbl_title.setObjectName("title_heading")
         self.lbl_title.setStyleSheet("font-weight: 700; font-size: 15px; letter-spacing: -0.3px;")
 
-        self.lbl_ver = QLabel("v1.1.0")
+        self.lbl_ver = QLabel(f"v{__version__}")
         self.lbl_ver.setObjectName("ver_badge")
 
         # §49 Offline indicator

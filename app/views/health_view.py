@@ -198,7 +198,7 @@ class HealthView(QWidget):
             status = comp.get("status", "not_found")
             msg = comp.get("message", "N/A")
             badge = _status_badge(status)
-            status_lbl.setText(f"{badge}  {status.upper()}")
+            status_lbl.setText(badge)
             status_lbl.setStyleSheet(
                 "font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 10px; "
                 + _badge_style(status)

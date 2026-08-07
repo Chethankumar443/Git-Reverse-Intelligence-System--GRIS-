@@ -31,9 +31,25 @@ def create_desktop_shortcut(target_path: Path, shortcut_name: str = "Git Reverse
     else:
         print(f"Warning: Failed to create desktop shortcut: {result.stderr}")
 
+import hashlib
+from app._version import __version__
+
+def generate_sha256_checksum(target_path: Path):
+    """Calculates and writes SHA256 checksum for the release executable artifact."""
+    if not target_path.exists():
+        return
+    sha256 = hashlib.sha256()
+    with open(target_path, "rb") as f:
+        for chunk in iter(lambda: f.read(65536), b""):
+            sha256.update(chunk)
+    digest = sha256.hexdigest()
+    sums_file = DIST_DIR / "SHA256SUMS.txt"
+    sums_file.write_text(f"{digest}  {target_path.name}\n", encoding="utf-8")
+    print(f"Generated checksum file {sums_file}: {digest}")
+
 def build():
     """Builds PyInstaller executable bundle and generates release package."""
-    print("=== Building Git Reverse Release Package ===")
+    print(f"=== Building Git Reverse Release Package v{__version__} ===")
     print(f"Project Root: {ROOT_DIR}")
     
     # 1. Run PyInstaller
@@ -53,6 +69,8 @@ def build():
         print(f"Build Success! Binary output: {exe_path}")
         # Always create desktop shortcut for current user
         create_desktop_shortcut(exe_path)
+        # Compute SHA256 checksum
+        generate_sha256_checksum(exe_path)
     else:
         print("Build finished, checking dist folder contents:")
         for item in DIST_DIR.glob("*"):

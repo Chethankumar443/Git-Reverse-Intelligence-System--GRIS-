@@ -14,6 +14,7 @@ a = Analysis(
         ('DESIGN-vercel.md', '.'),
     ],
     hiddenimports=[
+        'app._version',
         'PySide6.QtCore',
         'PySide6.QtGui',
         'PySide6.QtWidgets',
