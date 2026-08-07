@@ -1,3 +1,4 @@
+# Python / PyInstaller Exclusions
 __pycache__/
 *.pyc
 *.pyo
@@ -6,6 +7,10 @@ build/
 dist/
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+*.spec
+
+# Database & Storage
 *.db
 *.sqlite
 design_base64.txt
@@ -16,5 +21,10 @@ workspace/web/node_modules/
 workspace/web/dist/
 workspace/api/*.db
 workspace/api/*.sqlite
+
+# Environment Files
 .env
 .env.local
+
+# Rust / Cargo
+target/
