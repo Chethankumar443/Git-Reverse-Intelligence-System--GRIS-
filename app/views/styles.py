@@ -6,7 +6,7 @@ _BASE = """
 QWidget {{
     color: {text};
     background-color: {bg};
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Geist", sans-serif;
+    font-family: 'Grcafon', 'Orbitron', 'Space Grotesk', 'Cabinet Grotesk', -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", sans-serif;
     font-size: 13px;
     border: none;
     outline: none;
@@ -39,10 +39,11 @@ QFrame#titlebar {{
 }}
 
 QLabel#title_heading {{
+    font-family: 'Grcafon', 'Orbitron', 'Space Grotesk', 'Cabinet Grotesk', sans-serif;
     font-size: 15px;
     font-weight: 700;
     color: {text};
-    letter-spacing: -0.3px;
+    letter-spacing: 0.5px;
 }}
 
 QLabel#ver_badge {{
@@ -122,9 +123,10 @@ QGroupBox::title {{
     color: {text};
     border: 1px solid {border};
     border-radius: 6px;
+    font-family: 'Grcafon', 'Orbitron', 'Space Grotesk', sans-serif;
     font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
 }}
 
@@ -438,7 +440,7 @@ QLabel {{
 
 /* Eyebrow label */
 QLabel[class="g-eyebrow"] {{
-    font-family: 'Geist', 'Segoe UI', sans-serif;
+    font-family: 'Grcafon', 'Orbitron', 'Space Grotesk', 'Cabinet Grotesk', sans-serif;
     font-size: 11px;
     font-weight: 700;
     color: {muted};
