@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
         lbl_arch = QLabel("Git Reverse System")
         lbl_arch.setStyleSheet("font-size: 12px; font-weight: 700;")
         lbl_sec = QLabel("● FTS5 Hybrid Engine Active")
-        lbl_sec.setStyleSheet("font-size: 11px; color: #788c5d; font-weight: 600;")
+        lbl_sec.setStyleSheet("font-size: 11px; color: #10b981; font-weight: 600;")
         foot_layout.addWidget(lbl_arch)
         foot_layout.addWidget(lbl_sec)
         sidebar_layout.addWidget(self.sidebar_footer)

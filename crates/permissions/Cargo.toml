@@ -1,0 +1,8 @@
+[package]
+name = "git-reverse-permissions"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+git-reverse-core = { path = "../core" }
+tracing.workspace = true

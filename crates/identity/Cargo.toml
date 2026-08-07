@@ -1,0 +1,13 @@
+[package]
+name = "git-reverse-identity"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+git-reverse-core = { path = "../core" }
+jsonwebtoken.workspace = true
+argon2.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true

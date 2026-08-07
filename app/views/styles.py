@@ -38,8 +38,8 @@ QLabel#ver_badge {{
     font-family: 'Geist Mono', 'Consolas', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: {muted};
-    background-color: {hover};
+    color: {badge_text};
+    background-color: {badge_bg};
     border: 1px solid {border};
     border-radius: 6px;
     padding: 2px 8px;
@@ -85,7 +85,7 @@ QFrame[class="g-bento-card"] {{
     background-color: {card};
     border: 1px solid {border};
     border-radius: 12px;
-    padding: 14px;
+    padding: 16px;
 }}
 QFrame[class="g-bento-card"]:hover {{
     border-color: {border_strong};
@@ -135,7 +135,7 @@ QPushButton:pressed {{
     background-color: {pressed};
 }}
 QPushButton:disabled {{
-    color: {muted};
+    color: {disabled_text};
     background-color: {surface};
     border-color: {border};
 }}
@@ -157,9 +157,9 @@ QPushButton[class="g-btn-solid"]:pressed {{
     background-color: {ink_pressed};
 }}
 QPushButton[class="g-btn-solid"]:disabled {{
-    background-color: {muted};
-    border-color: {muted};
-    color: {surface};
+    background-color: {border};
+    border-color: {border};
+    color: {disabled_text};
 }}
 
 /* Ghost button */
@@ -187,9 +187,9 @@ QPushButton[class="g-btn-chip"] {{
     border: 1px solid {border};
 }}
 QPushButton[class="g-btn-chip"]:hover {{
-    background-color: {ink};
-    color: {ink_text};
-    border-color: {ink};
+    background-color: {hover};
+    color: {text};
+    border-color: {border_strong};
 }}
 
 /* ════════════════ Text Inputs ════════════════ */
@@ -204,7 +204,7 @@ QLineEdit {{
     selection-color: {sel_text};
 }}
 QLineEdit:focus {{
-    border-color: {ink};
+    border-color: {border_strong};
 }}
 QLineEdit:read-only {{
     color: {muted};
@@ -222,7 +222,7 @@ QPlainTextEdit, QTextEdit {{
     selection-color: {sel_text};
 }}
 QPlainTextEdit:focus, QTextEdit:focus {{
-    border-color: {ink};
+    border-color: {border_strong};
 }}
 
 /* ════════════════ ComboBox ════════════════ */
@@ -239,7 +239,7 @@ QComboBox:hover {{
     border-color: {border_strong};
 }}
 QComboBox:focus {{
-    border-color: {ink};
+    border-color: {border_strong};
 }}
 QComboBox::drop-down {{
     subcontrol-origin: padding;
@@ -253,8 +253,8 @@ QComboBox QAbstractItemView {{
     border: 1px solid {border_strong};
     border-radius: 8px;
     padding: 4px;
-    selection-background-color: {ink};
-    selection-color: {ink_text};
+    selection-background-color: {item_sel_bg};
+    selection-color: {item_sel_text};
     outline: none;
 }}
 QComboBox QAbstractItemView::item {{
@@ -269,8 +269,8 @@ QComboBox QAbstractItemView::item:hover {{
     color: {text};
 }}
 QComboBox QAbstractItemView::item:selected {{
-    background-color: {ink};
-    color: {ink_text};
+    background-color: {item_sel_bg};
+    color: {item_sel_text};
 }}
 
 /* ════════════════ Tab Widget ════════════════ */
@@ -492,62 +492,68 @@ QFrame[class="g-evidence-card"] {{
 }}
 """
 
-# ── Light Palette (Clean, Eco-Minimalist Brand Palette) ───────────────────────
+# ── Light Palette (Clean, High-Contrast Modern Enterprise Palette) ─────────────
 _LIGHT = dict(
-    bg="#faf9f5",
+    bg="#fcfcfc",
     surface="#ffffff",
     card="#ffffff",
-    text="#141413",
-    muted="#788c5d",
-    nav_muted="#52524e",
-    border="#e8e6dc",
-    border_strong="#b0aea5",
-    hover="#f4f3ed",
-    pressed="#e8e6dc",
-    chip_bg="#f4f3ed",
-    chip_text="#141413",
-    ink="#d97757",
-    ink_text="#faf9f5",
-    ink_hover="#c46344",
-    ink_pressed="#b35336",
-    ink_dim="#b0aea5",
+    text="#18181b",
+    muted="#64748b",
+    nav_muted="#475569",
+    border="#e4e4e7",
+    border_strong="#a1a1aa",
+    hover="#f4f4f5",
+    pressed="#e4e4e7",
+    chip_bg="#f4f4f5",
+    chip_text="#18181b",
+    badge_bg="#f4f4f5",
+    badge_text="#475569",
+    disabled_text="#a1a1aa",
+    ink="#18181b",
+    ink_text="#ffffff",
+    ink_hover="#27272a",
+    ink_pressed="#09090b",
+    ink_dim="#a1a1aa",
     input_bg="#ffffff",
-    scrollbar="#e8e6dc",
-    sel_bg="#e8f0e6",
-    sel_text="#788c5d",
-    item_sel_bg="#d97757",
+    scrollbar="#d4d4d8",
+    sel_bg="#e4e4e7",
+    sel_text="#18181b",
+    item_sel_bg="#18181b",
     item_sel_text="#ffffff",
-    tooltip_bg="#141413",
-    tooltip_text="#faf9f5",
+    tooltip_bg="#18181b",
+    tooltip_text="#ffffff",
 )
 
 # ── Dark Palette (Editorial Dark Tech Palette) ─────────────────────────────────
 _DARK = dict(
-    bg="#141413",
-    surface="#1a1a19",
-    card="#1f1f1d",
-    text="#faf9f5",
-    muted="#b0aea5",
-    nav_muted="#e8e6dc",
-    border="#2e2e2b",
-    border_strong="#b0aea5",
-    hover="#2b2b28",
-    pressed="#383834",
-    chip_bg="#2b2b28",
-    chip_text="#faf9f5",
-    ink="#d97757",
-    ink_text="#faf9f5",
-    ink_hover="#c46344",
-    ink_pressed="#b35336",
-    ink_dim="#b0aea5",
-    input_bg="#1f1f1d",
-    scrollbar="#2e2e2b",
-    sel_bg="#2a3828",
-    sel_text="#788c5d",
-    item_sel_bg="#d97757",
+    bg="#09090b",
+    surface="#121215",
+    card="#18181b",
+    text="#f4f4f5",
+    muted="#a1a1aa",
+    nav_muted="#d4d4d8",
+    border="#27272a",
+    border_strong="#52525b",
+    hover="#27272a",
+    pressed="#3f3f46",
+    chip_bg="#27272a",
+    chip_text="#f4f4f5",
+    badge_bg="#27272a",
+    badge_text="#a1a1aa",
+    disabled_text="#52525b",
+    ink="#f4f4f5",
+    ink_text="#09090b",
+    ink_hover="#e4e4e7",
+    ink_pressed="#d4d4d8",
+    ink_dim="#52525b",
+    input_bg="#18181b",
+    scrollbar="#3f3f46",
+    sel_bg="#27272a",
+    sel_text="#f4f4f5",
+    item_sel_bg="#3f3f46",
     item_sel_text="#ffffff",
-    tooltip_bg="#faf9f5",
-    tooltip_text="#141413",
+    tooltip_bg="#f4f4f5",
+    tooltip_text="#09090b",
 )
 
 GEIST_LIGHT_QSS: str = _BASE.format(**_LIGHT)

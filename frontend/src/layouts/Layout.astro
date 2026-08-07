@@ -1,0 +1,54 @@
+---
+import '../index.css';
+
+interface Props {
+  title?: string;
+}
+
+const { title = "Git Reverse 2.0 — Repository Intelligence Platform" } = Astro.props;
+---
+
+<!usr/bin/env html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#fafafa] text-[#171717] min-h-screen flex flex-col antialiased">
+    <!-- Top Navigation Header -->
+    <header class="bg-[#fafafa] border-b border-[#ebebeb] px-6 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2 font-semibold text-lg tracking-tight text-[#171717]">
+          <span class="bg-[#171717] text-white px-2 py-0.5 rounded text-xs font-mono">GR 2.0</span>
+          Git Reverse Workspace
+        </a>
+        <span class="text-xs font-mono bg-[#f2f2f2] text-[#4d4d4d] px-2 py-0.5 rounded border border-[#ebebeb]">
+          Rust Core + Astro Shell
+        </span>
+      </div>
+
+      <nav class="flex items-center gap-4 text-sm font-medium text-[#4d4d4d]">
+        <a href="/" class="hover:text-[#171717] transition-colors">Workspace</a>
+        <a href="/chat" class="hover:text-[#171717] transition-colors">AI Copilot</a>
+        <a href="/audit" class="hover:text-[#171717] transition-colors">Audit Trail</a>
+        <a href="/agents" class="hover:text-[#171717] transition-colors">AI Agents</a>
+        <a href="/health" class="hover:text-[#171717] transition-colors">Health Engine</a>
+      </nav>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-[#ebebeb] px-6 py-4 text-xs font-mono text-[#8f8f8f] flex justify-between items-center bg-[#fafafa]">
+      <div>Git Reverse v2.0 · Rust Axum + Astro JS + React Islands</div>
+      <div>Security: Fail-Closed Scope Engine Active · Audit Logging: Enabled</div>
+    </footer>
+  </body>
+</html>

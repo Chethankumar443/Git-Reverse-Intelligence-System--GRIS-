@@ -1,0 +1,11 @@
+[package]
+name = "git-reverse-audit"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+git-reverse-core = { path = "../core" }
+chrono.workspace = true
+uuid.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
