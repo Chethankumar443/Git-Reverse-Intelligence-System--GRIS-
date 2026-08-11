@@ -250,25 +250,32 @@ class LLMClient:
     def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1", model_id: str = "gpt-4o"):
         self.api_key = (api_key or "ollama").strip()
 
-        # Auto-correct mismatched base_url based on API Key prefix if mismatched
+        # Auto-correct mismatched base_url and model_id based on API Key prefix if mismatched
         if self.api_key and self.api_key != "ollama":
             detected_provider, auto_url = detect_provider_from_key(self.api_key)
             if detected_provider != "Custom" and auto_url and (not base_url or base_url == "https://api.openai.com/v1"):
                 base_url = auto_url
-            elif self.api_key.startswith("sk-or-v1-") and "openrouter" not in base_url.lower():
+            elif self.api_key.startswith("sk-or-v1-") and "openrouter" not in (base_url or "").lower():
                 base_url = "https://openrouter.ai/api/v1"
-            elif self.api_key.startswith("gsk_") and "groq" not in base_url.lower():
+            elif self.api_key.startswith("gsk_") and "groq" not in (base_url or "").lower():
                 base_url = "https://api.groq.com/openai/v1"
 
         self.base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
-        # Strip [FREE] display prefix if it was passed in
-        self.model_id = model_id.replace("[FREE] ", "").strip()
+        raw_model = (model_id or "").replace("[FREE] ", "").strip()
+
+        # Auto-assign provider-compatible model if current model_id is empty or mismatched
+        if "openrouter" in self.base_url.lower():
+            self.model_id = raw_model if raw_model and raw_model != "gpt-4o" else "openrouter/auto"
+        elif "groq" in self.base_url.lower():
+            self.model_id = raw_model if raw_model and raw_model != "gpt-4o" else "llama-3.3-70b-versatile"
+        elif "deepseek" in self.base_url.lower():
+            self.model_id = raw_model if raw_model and raw_model != "gpt-4o" else "deepseek-chat"
+        else:
+            self.model_id = raw_model if raw_model else "gpt-4o"
 
         # ── Provider-specific required headers ────────────────────────────────
-        # OpenRouter requires HTTP-Referer + X-Title or it returns 401 "User not found"
-        # Groq / DeepSeek / OpenAI work with no extra headers
         extra_headers = {}
-        if "openrouter" in self.base_url.lower():
+        if "openrouter" in self.base_url.lower() or self.api_key.startswith("sk-or-v1-"):
             extra_headers = {
                 "HTTP-Referer": "https://github.com/git-reverse/desktop",
                 "X-Title": "Git Reverse Desktop",
@@ -277,7 +284,7 @@ class LLMClient:
         self.client = OpenAI(
             api_key=self.api_key,
             base_url=self.base_url,
-            timeout=120.0,  # Increased timeout to 120s to support large prompt streaming without timing out
+            timeout=120.0,
             default_headers=extra_headers if extra_headers else None,
         )
 

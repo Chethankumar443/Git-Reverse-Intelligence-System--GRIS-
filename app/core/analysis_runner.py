@@ -108,7 +108,11 @@ async def run_analysis(
         dependency_details = analysis_res.get("dependency_details", [])
 
         # ── 6. Create SQLite session ──────────────────────────────────────────
+        api_key = await asyncio.to_thread(SecretsManager.get_api_key)
+        config = await asyncio.to_thread(SecretsManager.load_config)
         db_mgr = DatabaseManager()
+        configured_model = config.get("model_id", "gpt-4o")
+
         session_rec = await asyncio.to_thread(
             db_mgr.create_session,
             repo_url,
@@ -116,7 +120,7 @@ async def run_analysis(
             languages[0] if languages else "Unknown",
             len(files),
             source_license,
-            "gpt-4o",
+            configured_model,
             commit_sha,
             branch,
             repo_tag,
