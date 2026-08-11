@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   GitBranch, Download, MessageSquare, ChevronRight, ExternalLink, Copy, CheckCheck,
-  ShieldCheck, AlertTriangle, Loader2
+  ShieldCheck, AlertTriangle
 } from 'lucide-react';
+import { ThinkingOrbs } from '../motion/ThinkingOrbs';
 import { ApiService } from '../../lib/api';
 import type { RepositoryAnalysis } from '../../types';
 
@@ -165,9 +166,8 @@ export const RepoInsights: React.FC<RepoInsightsProps> = ({ analysis, onOpenChat
               }}
             >
               {loadingPrompt ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--color-mute)' }}>
-                  <Loader2 size={13} className="animate-spin" />
-                  <span>Synthesizing system recreation prompt…</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 40 }}>
+                  <ThinkingOrbs label="Synthesizing system recreation prompt…" size="md" />
                 </div>
               ) : prompt ? prompt : (
                 <span style={{ color: 'var(--color-mute)' }}>No system prompt generated yet.</span>
