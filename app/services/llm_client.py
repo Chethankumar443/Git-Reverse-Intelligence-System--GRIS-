@@ -248,8 +248,19 @@ class LLMClient:
     multi-provider BYOK support, and mandatory attribution footers."""
 
     def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1", model_id: str = "gpt-4o"):
-        self.api_key = api_key or "ollama"
-        self.base_url = base_url.rstrip("/")
+        self.api_key = (api_key or "ollama").strip()
+
+        # Auto-correct mismatched base_url based on API Key prefix if mismatched
+        if self.api_key and self.api_key != "ollama":
+            detected_provider, auto_url = detect_provider_from_key(self.api_key)
+            if detected_provider != "Custom" and auto_url and (not base_url or base_url == "https://api.openai.com/v1"):
+                base_url = auto_url
+            elif self.api_key.startswith("sk-or-v1-") and "openrouter" not in base_url.lower():
+                base_url = "https://openrouter.ai/api/v1"
+            elif self.api_key.startswith("gsk_") and "groq" not in base_url.lower():
+                base_url = "https://api.groq.com/openai/v1"
+
+        self.base_url = (base_url or "https://api.openai.com/v1").rstrip("/")
         # Strip [FREE] display prefix if it was passed in
         self.model_id = model_id.replace("[FREE] ", "").strip()
 

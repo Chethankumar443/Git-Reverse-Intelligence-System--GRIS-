@@ -61,6 +61,18 @@ async def save_config(body: SaveConfigRequest):
     if "github_token" in updates:
         await asyncio.to_thread(SecretsManager.set_github_token, updates.pop("github_token"))
 
+    # Auto-assign base_url when provider_preset is updated
+    provider_urls = {
+        "OpenAI": "https://api.openai.com/v1",
+        "OpenRouter": "https://openrouter.ai/api/v1",
+        "Groq": "https://api.groq.com/openai/v1",
+        "DeepSeek": "https://api.deepseek.com/v1",
+        "Ollama": "http://localhost:11434/v1",
+    }
+    preset = updates.get("provider_preset")
+    if preset and preset in provider_urls and "base_url" not in updates:
+        updates["base_url"] = provider_urls[preset]
+
     config.update(updates)
     ok = await asyncio.to_thread(SecretsManager.save_config, config)
     return {"saved": ok}
@@ -75,10 +87,14 @@ async def test_connection(body: TestConnectionRequest):
     if not api_key:
         return {"ok": False, "message": "No API key configured."}
 
+    config = await asyncio.to_thread(SecretsManager.load_config)
+    base_url = body.base_url if body.base_url != "https://api.openai.com/v1" else config.get("base_url", "https://api.openai.com/v1")
+    model_id = body.model_id or config.get("model_id", "gpt-4o")
+
     llm = LLMClient(
         api_key=api_key,
-        base_url=body.base_url or "https://api.openai.com/v1",
-        model_id=body.model_id or "gpt-4o",
+        base_url=base_url,
+        model_id=model_id,
     )
     ok, msg = await asyncio.to_thread(llm.test_connection)
     return {"ok": ok, "message": msg}
