@@ -5,6 +5,7 @@ import {
   ShieldCheck, AlertTriangle
 } from 'lucide-react';
 import { ThinkingOrbs } from '../motion/ThinkingOrbs';
+import { RepoFileTree } from './RepoFileTree';
 import { ApiService } from '../../lib/api';
 import type { RepositoryAnalysis } from '../../types';
 
@@ -137,8 +138,13 @@ export const RepoInsights: React.FC<RepoInsightsProps> = ({ analysis, onOpenChat
           </div>
         </div>
 
-        {/* Main 2-Column Split: System Prompt Panel + Sidebar Context */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, alignItems: 'start' }}>
+        {/* 3-Column Desktop Layout: File Tree & AST Inspector + System Prompt Panel + Sidebar Context */}
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr 280px', gap: 16, alignItems: 'start' }}>
+
+          {/* Column 1: Folder Tree Navigation & AST Inspector */}
+          <div className="card" style={{ height: 536, overflow: 'hidden' }}>
+            <RepoFileTree />
+          </div>
 
           {/* System Prompt Code Viewer */}
           <div className="card" style={{ overflow: 'hidden' }}>
