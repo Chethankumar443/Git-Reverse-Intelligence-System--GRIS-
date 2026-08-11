@@ -78,16 +78,20 @@ export const ChatCopilot: React.FC<ChatCopilotProps> = ({ initialPromptText = ''
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = '';
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
             try {
-              const event = JSON.parse(line.slice(6));
+              const event = JSON.parse(trimmed.slice(6));
               if (event.text) {
                 accumulated += event.text;
                 setMessages((prev) =>
@@ -97,6 +101,18 @@ export const ChatCopilot: React.FC<ChatCopilotProps> = ({ initialPromptText = ''
             } catch { /* ignore parse error */ }
           }
         }
+      }
+
+      if (buffer.trim().startsWith('data: ')) {
+        try {
+          const event = JSON.parse(buffer.trim().slice(6));
+          if (event.text) {
+            accumulated += event.text;
+            setMessages((prev) =>
+              prev.map((m) => m.id === assistantId ? { ...m, content: accumulated } : m)
+            );
+          }
+        } catch { /* ignore */ }
       }
     } catch {
       const mockResp = await ApiService.sendChatMessage(userMsg.content, messages);

@@ -255,17 +255,21 @@ class DatabaseManager:
 
         db: SASession = self.SessionLocal()
         try:
-            # Try FTS5 MATCH query first with phrase escaping to prevent operator crashes
+            # Try FTS5 MATCH query first with phrase token escaping
             try:
-                fts_query = '"' + clean_q.replace('"', '""') + '"'
-                fts_res = db.execute(text("""
-                    SELECT content_rowid FROM session_records_fts
-                    WHERE session_records_fts MATCH :q
-                    ORDER BY content_rowid DESC;
-                """), {"q": fts_query}).fetchall()
-                if fts_res:
-                    row_ids = [r[0] for r in fts_res]
-                    return db.query(SessionRecord).filter(SessionRecord.id.in_(row_ids)).all()
+                # Sanitize search tokens to prevent FTS5 syntax exceptions
+                clean_tokens = [w.strip('*:^"{ authorization()[]') for w in clean_q.split() if w.upper() not in {'AND', 'OR', 'NOT', 'NEAR'}]
+                clean_tokens = [t for t in clean_tokens if t]
+                if clean_tokens:
+                    fts_query = ' '.join(f'"{t}"' for t in clean_tokens)
+                    fts_res = db.execute(text("""
+                        SELECT content_rowid FROM session_records_fts
+                        WHERE session_records_fts MATCH :q
+                        ORDER BY content_rowid DESC;
+                    """), {"q": fts_query}).fetchall()
+                    if fts_res:
+                        row_ids = [r[0] for r in fts_res]
+                        return db.query(SessionRecord).filter(SessionRecord.id.in_(row_ids)).all()
             except Exception:
                 pass
 

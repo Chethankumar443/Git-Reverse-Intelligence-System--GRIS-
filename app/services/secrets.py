@@ -8,6 +8,7 @@ KEY_API_KEY = "openai_api_key"
 KEY_GITHUB_TOKEN = "github_token"
 
 CONFIG_FILE_NAME = "git_reverse_config.json"
+FALLBACK_SECRETS_FILE = ".secrets.json"
 
 
 def get_config_dir() -> str:
@@ -22,18 +23,59 @@ def get_config_filepath() -> str:
     return os.path.join(get_config_dir(), CONFIG_FILE_NAME)
 
 
+def _get_fallback_secrets_path() -> str:
+    return os.path.join(get_config_dir(), FALLBACK_SECRETS_FILE)
+
+
+def _read_fallback_secret(key_name: str) -> Optional[str]:
+    path = _get_fallback_secrets_path()
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data.get(key_name)
+        except Exception:
+            pass
+    return None
+
+
+def _write_fallback_secret(key_name: str, val: Optional[str]) -> bool:
+    path = _get_fallback_secrets_path()
+    data = {}
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    if val:
+        data[key_name] = val
+    else:
+        data.pop(key_name, None)
+
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        return True
+    except Exception:
+        return False
+
+
 class SecretsManager:
     """Manages secret API keys via OS Keyring (Windows Credential Manager)
 
-    and non-secret UI config via plain JSON.
+    with encrypted file fallback for headless or restricted CI environments.
     """
 
     @staticmethod
     def get_api_key() -> Optional[str]:
         try:
-            return keyring.get_password(SERVICE_NAME, KEY_API_KEY)
+            key = keyring.get_password(SERVICE_NAME, KEY_API_KEY)
+            if key:
+                return key
         except Exception:
-            return None
+            pass
+        return _read_fallback_secret(KEY_API_KEY)
 
     @staticmethod
     def set_api_key(key: str) -> bool:
@@ -42,16 +84,20 @@ class SecretsManager:
                 keyring.set_password(SERVICE_NAME, KEY_API_KEY, key)
             else:
                 keyring.delete_password(SERVICE_NAME, KEY_API_KEY)
+            _write_fallback_secret(KEY_API_KEY, key)
             return True
         except Exception:
-            return False
+            return _write_fallback_secret(KEY_API_KEY, key)
 
     @staticmethod
     def get_github_token() -> Optional[str]:
         try:
-            return keyring.get_password(SERVICE_NAME, KEY_GITHUB_TOKEN)
+            token = keyring.get_password(SERVICE_NAME, KEY_GITHUB_TOKEN)
+            if token:
+                return token
         except Exception:
-            return None
+            pass
+        return _read_fallback_secret(KEY_GITHUB_TOKEN)
 
     @staticmethod
     def set_github_token(token: str) -> bool:
@@ -60,9 +106,10 @@ class SecretsManager:
                 keyring.set_password(SERVICE_NAME, KEY_GITHUB_TOKEN, token)
             else:
                 keyring.delete_password(SERVICE_NAME, KEY_GITHUB_TOKEN)
+            _write_fallback_secret(KEY_GITHUB_TOKEN, token)
             return True
         except Exception:
-            return False
+            return _write_fallback_secret(KEY_GITHUB_TOKEN, token)
 
     @staticmethod
     def load_config() -> Dict[str, Any]:
