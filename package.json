@@ -5,7 +5,9 @@
   "main": "main.py",
   "scripts": {
     "start": "python main.py",
+    "dev": "python main.py",
     "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:frontend && python scripts/build_release.py",
     "build:frontend": "cd frontend && npm run build",
     "test": "pytest tests/"
   }

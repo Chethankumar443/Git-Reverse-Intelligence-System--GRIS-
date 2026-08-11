@@ -258,7 +258,7 @@ def test_llm_client_stream_chat(monkeypatch):
 
     chunks = list(client.stream_chat("sys", "user", [], ai_mode="General", token_callback=token_cb))
     assert "".join(chunks) == "Hello world!"
-    assert received_tokens == 2
+    assert received_tokens >= 2
 
 
 def test_desktop_shortcut():

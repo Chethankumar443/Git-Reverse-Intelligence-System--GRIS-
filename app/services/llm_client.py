@@ -144,6 +144,19 @@ def detect_provider_from_key(api_key: str) -> Tuple[str, str]:
     return "Custom", "https://api.openai.com/v1"
 
 
+def estimate_token_count(text: str) -> int:
+    """Accurately calculates or estimates token count for spending log precision."""
+    if not text:
+        return 0
+    try:
+        import tiktoken
+        enc = tiktoken.get_encoding("cl100k_base")
+        return len(enc.encode(text))
+    except Exception:
+        words = len(text.split())
+        return max(1, words) if words > 0 else 0
+
+
 def _is_model_free(model_id: str, provider: str) -> bool:
     """Returns True if the model appears to be on a free tier."""
     if model_id in KNOWN_FREE_MODELS:
@@ -321,7 +334,7 @@ File Tree Sample ({len(file_list)} files total):
                 for chunk in response:
                     if chunk.choices and chunk.choices[0].delta.content:
                         token_text = chunk.choices[0].delta.content
-                        tokens_total += len(token_text.split())  # rough estimate
+                        tokens_total += estimate_token_count(token_text)
                         yield token_text
 
                 # §64 Token usage callback
@@ -427,7 +440,7 @@ File Tree Sample ({len(file_list)} files total):
             for chunk in response:
                 if chunk.choices and chunk.choices[0].delta.content:
                     token_text = chunk.choices[0].delta.content
-                    tokens_total += len(token_text.split())
+                    tokens_total += estimate_token_count(token_text)
                     yield token_text
 
             if token_callback:

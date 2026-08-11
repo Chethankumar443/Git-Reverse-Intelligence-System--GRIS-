@@ -4,6 +4,7 @@ Secret Scanner — Local-only credential pattern detector (PRD §53).
 Scans repository file contents for API keys, tokens, private keys, and
 password-shaped patterns. NEVER transmits detected values to any LLM or
 external service. Returns only metadata: file path, pattern type, line number.
+Supports custom user-defined secret regexes loaded from git_reverse_config.json.
 """
 import re
 from typing import List, Dict, Any
@@ -55,9 +56,24 @@ MAX_SCAN_SIZE = 150 * 1024  # 150 KB per file — skip larger files
 _COMPILED: List[tuple] = [(label, re.compile(pat)) for label, pat in SECRET_PATTERNS]
 
 
-def scan_files(files: Dict[str, str]) -> List[Dict[str, Any]]:
+def get_compiled_patterns(custom_patterns: List[Dict[str, str]] = None) -> List[tuple]:
+    compiled = list(_COMPILED)
+    if custom_patterns:
+        for entry in custom_patterns:
+            label = entry.get("label", "Custom Pattern")
+            pat = entry.get("pattern", "")
+            if pat:
+                try:
+                    compiled.append((label, re.compile(pat)))
+                except Exception:
+                    pass
+    return compiled
+
+
+def scan_files(files: Dict[str, str], custom_patterns: List[Dict[str, str]] = None) -> List[Dict[str, Any]]:
     """
     Scans a dict of {filepath: content} for credential-shaped patterns.
+    Supports optional user-configured custom secret patterns.
 
     Returns a list of findings. Each finding contains:
         - path: str — relative file path
@@ -69,6 +85,7 @@ def scan_files(files: Dict[str, str]) -> List[Dict[str, Any]]:
     IMPORTANT: The actual matched string / secret VALUE is never included.
     """
     findings: List[Dict[str, Any]] = []
+    patterns = get_compiled_patterns(custom_patterns)
 
     for path, content in files.items():
         if not content:
@@ -90,7 +107,7 @@ def scan_files(files: Dict[str, str]) -> List[Dict[str, Any]]:
         lines = content.split("\n")
         found_in_file = set()  # de-duplicate pattern types per file
 
-        for label, compiled in _COMPILED:
+        for label, compiled in patterns:
             for line_no, line in enumerate(lines, start=1):
                 if len(line) > 2000:
                     continue

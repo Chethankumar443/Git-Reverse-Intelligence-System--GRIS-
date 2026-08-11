@@ -1,14 +1,18 @@
 """
 Git Reverse Frontend Directory Wrapper
-Delegates execution to the root main.py script.
+Delegates execution to the root main.py script with explicit absolute path resolution.
 """
+from pathlib import Path
 import os
 import sys
 
-# Change working directory to parent root
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
-os.chdir(root_dir)
+# Resolve root directory using Path
+ROOT_DIR = str(Path(__file__).resolve().parent.parent)
+
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+os.chdir(ROOT_DIR)
 
 # Execute root main.py
 if __name__ == "__main__":
