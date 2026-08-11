@@ -19,9 +19,32 @@ export const Topbar: React.FC<TopbarProps> = ({ activeTab, repoName, onOpenSetti
     history:  'History',
   };
 
+  const handleMinimize = () => {
+    if (typeof window !== 'undefined') {
+      // In webview / browser mode, blur active element
+      (document.activeElement as HTMLElement)?.blur();
+    }
+  };
+
+  const handleMaximize = () => {
+    if (typeof window !== 'undefined') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        setMaximized(true);
+      } else {
+        document.exitFullscreen().catch(() => {});
+        setMaximized(false);
+      }
+    }
+  };
+
   const handleClose = () => {
     if (typeof window !== 'undefined') {
-      window.close();
+      try {
+        window.close();
+      } catch {
+        // Fallback for browser security policy
+      }
     }
   };
 
@@ -73,6 +96,7 @@ export const Topbar: React.FC<TopbarProps> = ({ activeTab, repoName, onOpenSetti
         {/* Windows 11 Titlebar Button Controls */}
         <div style={{ display: 'flex', alignItems: 'center', height: '100%', marginLeft: 6 }}>
           <button
+            onClick={handleMinimize}
             className="win-btn"
             style={{ width: 44, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-body)', transition: 'background 0.1s' }}
             title="Minimize"
@@ -81,7 +105,7 @@ export const Topbar: React.FC<TopbarProps> = ({ activeTab, repoName, onOpenSetti
           </button>
 
           <button
-            onClick={() => setMaximized(!maximized)}
+            onClick={handleMaximize}
             className="win-btn"
             style={{ width: 44, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-body)', transition: 'background 0.1s' }}
             title={maximized ? 'Restore' : 'Maximize'}
@@ -93,7 +117,7 @@ export const Topbar: React.FC<TopbarProps> = ({ activeTab, repoName, onOpenSetti
             onClick={handleClose}
             className="win-btn-close"
             style={{ width: 44, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--color-body)', transition: 'all 0.1s' }}
-            title="Close"
+            title="Close Window"
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#e81123';
               e.currentTarget.style.color = '#ffffff';
