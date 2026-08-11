@@ -1,0 +1,12 @@
+{
+  "name": "git-reverse-desktop",
+  "version": "1.1.0",
+  "description": "Git Reverse Intelligence System — Developer Desktop Application",
+  "main": "main.py",
+  "scripts": {
+    "start": "python main.py",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "pytest tests/"
+  }
+}

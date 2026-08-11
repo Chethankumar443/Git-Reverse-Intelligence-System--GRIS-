@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.views.components import classify_error
+from app.core.taxonomy import classify_error
 from app.services.database import DatabaseManager
 from app.services.secrets import SecretsManager
 from app.services.llm_client import LLMClient

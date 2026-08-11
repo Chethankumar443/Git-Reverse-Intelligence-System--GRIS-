@@ -8,15 +8,17 @@ dist/
 *.egg-info/
 .pytest_cache/
 .ruff_cache/
-*.spec
 
 # Database & Storage
 *.db
 *.sqlite
 design_base64.txt
 
-# Node / Web Workspace
+# Node / Frontend Workspace
 node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.astro/
 workspace/web/node_modules/
 workspace/web/dist/
 workspace/api/*.db

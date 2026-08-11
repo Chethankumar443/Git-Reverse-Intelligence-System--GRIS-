@@ -6,7 +6,7 @@
 #define MyAppExeName "git-reverse.exe"
 
 [Setup]
-AppId={{D38C3B22-00AB-4E64-9EF0-CCB0D250CFF9}
+AppId={D38C3B22-00AB-4E64-9EF0-CCB0D250CFF9}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}

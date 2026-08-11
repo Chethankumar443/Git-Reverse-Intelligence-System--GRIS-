@@ -70,4 +70,4 @@ All sensitive API keys and personal access tokens are stored securely in your OS
 ## 🛡️ License
 
 This project is licensed under the [MIT License](LICENSE).
-Created by **Chethan Kumar / NEXUS LABS**.
+Created by ***Chethan Kumar Jagadish Ulavi / Paradise Creations Labs***.

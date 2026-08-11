@@ -13,7 +13,7 @@ authors = [
 license = "MIT"
 keywords = [
     "git", "reverse-engineering", "code-analysis", "ast", "llm",
-    "copilot", "pyside6", "fts5", "repository-intelligence", "ai"
+    "copilot", "fastapi", "fts5", "repository-intelligence", "ai"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -27,13 +27,15 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
-    "PySide6>=6.6.0",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "python-multipart>=0.0.9",
+    "aiofiles>=23.0.0",
     "openai>=1.30.0",
     "requests>=2.31.0",
     "SQLAlchemy>=2.0.0",
     "keyring>=24.0.0",
     "Jinja2>=3.1.0",
-    "httpx>=0.25.0",
 ]
 
 [project.optional-dependencies]

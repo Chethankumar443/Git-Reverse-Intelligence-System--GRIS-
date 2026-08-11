@@ -1,19 +1,24 @@
+"""
+Git Reverse Intelligence System — Application Entrypoint
+Launches the FastAPI server and opens the desktop UI in the default browser.
+"""
 import sys
 import os
 import argparse
+import webbrowser
+import threading
+import time
 
 # Ensure project root is in python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from app._version import __version__, __app_name__
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="gitreverse",
-        description="Git Reverse Intelligence System (GRIS) — Production Repository Intelligence Desktop Platform",
+        description="Git Reverse Intelligence System (GRIS) — Repository Intelligence Platform",
     )
     parser.add_argument(
         "-v", "--version", action="version", version=f"{__app_name__} v{__version__}"
@@ -23,11 +28,32 @@ def parse_args():
         action="store_true",
         help="Reset first-run onboarding wizard preferences",
     )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind the server to (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to bind the server to (default: 8000)",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Don't open browser automatically",
+    )
     return parser.parse_args()
 
 
+def open_browser_when_ready(host: str, port: int, delay: float = 1.5):
+    """Opens the app in the default browser after the server starts."""
+    time.sleep(delay)
+    webbrowser.open(f"http://{host}:{port}")
+
+
 def main():
-    """Main Application Entrypoint for Git Reverse Desktop."""
     args = parse_args()
 
     if args.reset_setup:
@@ -35,36 +61,40 @@ def main():
         config = SecretsManager.load_config()
         config["first_run_complete"] = False
         SecretsManager.save_config(config)
-        print("First-run onboarding wizard state reset successfully.")
+        print("First-run onboarding state reset successfully.")
+        return
 
-    app = QApplication(sys.argv)
-    app.setApplicationName(__app_name__)
-    app.setOrganizationName("GitReverse")
+    from app.api.main_router import create_app
+    import uvicorn
 
-    icon_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        ".agents",
-        "skills",
-        "favicon (1)",
-        "favicon.ico",
+    app = create_app()
+
+    host = args.host
+    port = args.port
+
+    print(f"\n{'='*56}")
+    print(f"  {__app_name__} v{__version__}")
+    print(f"  Repository Intelligence System")
+    print(f"  Server: http://{host}:{port}")
+    print(f"  API Docs: http://{host}:{port}/api/docs")
+    print(f"{'='*56}\n")
+
+    # Open browser in background thread after server starts
+    if not args.no_browser:
+        t = threading.Thread(
+            target=open_browser_when_ready,
+            args=(host, port),
+            daemon=True,
+        )
+        t.start()
+
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        access_log=False,
     )
-    if os.path.exists(icon_path):
-        app.setWindowIcon(QIcon(icon_path))
-
-    from app.views.main_window import MainWindow
-
-    window = MainWindow()
-    window.show()
-
-    def cleanup():
-        # Stop active worker threads on exit to prevent QThread destruction warnings
-        for worker in getattr(window, "_active_workers", []):
-            if worker and worker.isRunning():
-                worker.quit()
-                worker.wait(500)
-
-    app.aboutToQuit.connect(cleanup)
-    sys.exit(app.exec())
 
 
 if __name__ == "__main__":
