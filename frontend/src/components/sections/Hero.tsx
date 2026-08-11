@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Search, ArrowRight, CheckCircle2, Loader2, Terminal, Sparkles } from 'lucide-react';
+import { ThinkingOrbs } from '../motion/ThinkingOrbs';
 import { ApiService } from '../../lib/api';
 import type { RepositoryAnalysis } from '../../types';
 
@@ -208,7 +209,7 @@ export const AnalyzePane: React.FC<AnalyzePaneProps> = ({ onAnalysisStart, onAna
             style={{ height: 36, padding: '0 18px', gap: 6 }}
           >
             {analyzing ? (
-              <><Loader2 size={14} className="animate-spin" /><span>Analyzing…</span></>
+              <ThinkingOrbs label="Analyzing…" size="sm" />
             ) : (
               <><span>Reverse Repo</span><ArrowRight size={14} /></>
             )}

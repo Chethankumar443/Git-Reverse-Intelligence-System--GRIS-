@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, Bot, User, MessageSquare, Sparkles } from 'lucide-react';
+import { ThinkingOrbs } from '../motion/ThinkingOrbs';
 import { ApiService } from '../../lib/api';
 import type { ChatMessage } from '../../types';
 
@@ -228,11 +229,7 @@ export const ChatCopilot: React.FC<ChatCopilotProps> = ({ initialPromptText = ''
                 }}
               >
                 {msg.content || (
-                  <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center', color: 'var(--color-mute)' }}>
-                    <span className="status-dot ok animate-pulse-glow" />
-                    <span className="status-dot ok animate-pulse-glow" style={{ animationDelay: '0.2s' }} />
-                    <span className="status-dot ok animate-pulse-glow" style={{ animationDelay: '0.4s' }} />
-                  </span>
+                  <ThinkingOrbs label="Synthesizing response…" size="sm" />
                 )}
               </div>
             </div>

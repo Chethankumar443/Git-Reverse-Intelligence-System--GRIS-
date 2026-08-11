@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Key, Cpu, CheckCircle2, AlertCircle, Loader2, ArrowRight, ArrowLeft, GitBranch, Sparkles } from 'lucide-react';
+import { ShieldCheck, Key, Cpu, CheckCircle2, AlertCircle, ArrowRight, ArrowLeft, GitBranch, Sparkles } from 'lucide-react';
+import { ThinkingOrbs } from '../motion/ThinkingOrbs';
 
 interface FirstRunWizardProps {
   isOpen: boolean;
@@ -234,8 +235,7 @@ export const FirstRunWizard: React.FC<FirstRunWizardProps> = ({ isOpen, onComple
               
               {testing ? (
                 <div style={{ textAlign: 'center', padding: 24 }}>
-                  <Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 8px', color: 'var(--color-cyan)' }} />
-                  <p style={{ fontSize: 12, color: 'var(--color-mute)' }}>Verifying local database, FTS5 index & API endpoint…</p>
+                  <ThinkingOrbs label="Verifying local database, FTS5 index & API endpoint…" size="md" />
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
